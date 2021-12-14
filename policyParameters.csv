@@ -1,2 +1,2 @@
-combinationKey,childCareTaxFreeRate,freeChildCareHoursPreSchool,publicCareNeedLevel,socialCareTaxFreeRate
-0,0.8,32,3,0.5
+combinationKey,childCareTaxFreeRate,freeChildCareHoursPreSchool_WF,freeChildCareHoursPreSchool_NWP,publicCareNeedLevel,socialCareTaxFreeRate
+2,0.8,24,12,3,0.5
