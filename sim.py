@@ -651,7 +651,8 @@ class Sim:
  
         self.startCareAllocation()
         
-        self.allocateWeeklyCare()
+        if year >= 2000:
+            self.allocateWeeklyCare()
         
         # print 'Doing fucntion 7...'
         # self.checkIncome(5)
