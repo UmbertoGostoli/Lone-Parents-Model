@@ -63,7 +63,7 @@ class Sim:
                         'classShare_1', 'classShare_2', 'classShare_3', 'classShare_4', 'classShare_5', 'totalInformalChildCare', 
                         'formalChildCare', 'totalUnmetChildCareNeed', 'childcareIncomeShare', 'shareInformalChildCare', 'shareCareGivers', 
                         'ratioFemaleMaleCarers', 'shareMaleCarers', 'shareFemaleCarers', 'ratioWage', 'ratioIncome', 
-                        'shareFamilyCarer', 'share_over20Hours_FamilyCarers', 'averageHoursOfCare', 'share_40to64_carers', 
+                        'shareFamilyCarer', 'share_over20Hours_FamilyCarers', 'numSocialCarers', 'averageHoursOfCare', 'share_40to64_carers', 
                         'share_over65_carers', 'share_10PlusHours_over70', 'totalSocialCareNeed', 
                         'totalInformalSocialCare', 'totalFormalSocialCare', 'totalUnmetSocialCareNeed', 
                         'totalSocialCare', 'share_InformalSocialCare', 'share_UnmetSocialCareNeed', 'totalOWSC', 'shareOWSC', 'totalCostOWSC', 
@@ -76,7 +76,7 @@ class Sim:
                         'grossDomesticProduct', 'publicCareToGDP', 'onhUnmetChildcareNeed', 'medianChildCareNeedONH',
                         'totalHoursOffWork', 'origIQ1', 'origIQ2', 'origIQ3', 'origIQ4', 'origIQ5', 'dispIQ1', 'dispIQ2', 'dispIQ3', 
                         'dispIQ4', 'dispIQ5', 'netIQ1', 'netIQ2', 'netIQ3', 'netIQ4', 'etIQ5', 'shareSES_1', 'shareSES_2', 'shareSES_3',
-                        'shareSES_4', 'shareSES_5']
+                        'shareSES_4', 'shareSES_5', 'internalChildCare', 'internalSocialCare', 'externalChildCare', 'externalSocialCare', 'shareInternalCare']
         
         self.outputData = pd.DataFrame()
         # Save initial parametrs into Scenario folder
@@ -122,6 +122,10 @@ class Sim:
         self.totalUnmetCareNeed = 0
         self.totalUnmetChildCareNeed = 0
         self.totalUnmetSocialCareNeed = 0
+        self.internalChildCare = 0
+        self.internalSocialCare = 0
+        self.externalChildCare = 0
+        self.externalSocialCare = 0
         self.shareUnmetNeed = []
         self.totalFamilyCare = []
         self.inHouseInformalCare = 0
@@ -683,7 +687,8 @@ class Sim:
         
         # Compute benefits.
         # They increase the household income in the following period.
-        self.computeBenefits()
+        if self.p['withBenefits'] == True:
+            self.computeBenefits()
         
         # self.publicCareEntitlements()
         
@@ -1369,7 +1374,7 @@ class Sim:
         
         print 'Doing allocateWeeklyCare'
         
-        self.publicChildCare = 0
+        # self.publicChildCare = 0
         self.parentsChildCare = 0
         self.householdChildCare = 0
         self.d1Childcare = 0
@@ -1392,6 +1397,8 @@ class Sim:
         CareProvision6_extim = 0
         CareProvision7_extim = 0
         
+        self.internalChildCare = 0
+        self.internalSocialCare = 0
         
         housesChildcareNeeds = [x for x in self.map.occupiedHouses if x.totalChildCareNeed > 0]
         for house in housesChildcareNeeds:
@@ -1430,7 +1437,7 @@ class Sim:
                                     house.careSlots.append(needSlot)
                                 
             
-            # Care rpovision 1: parents alocating all their free time
+            # Care provision 1: parents alocating all their free time
             
             start = time.time()
             
@@ -1464,6 +1471,7 @@ class Sim:
                         agent.unmetWeeklyNeeds[careSlot.day][careSlot.hour] = 0
                         agent.unmetChildCareNeed = max(agent.unmetChildCareNeed-1, 0)
                         agent.informalChildCareReceived += 1
+                        self.internalChildCare += 1
                         agent.totalChildCareNeed = max(agent.totalChildCareNeed-1, 0)
                         agent.privateChildCareNeed_ONH = max(agent.privateChildCareNeed_ONH-1, 0)
                         house.privateChildCareNeed_ONH -= 1
@@ -1493,6 +1501,7 @@ class Sim:
                         agent.unmetChildCareNeed = max(agent.unmetChildCareNeed-1, 0)
                         agent.totalChildCareNeed = max(agent.totalChildCareNeed-1, 0)
                         agent.informalChildCareReceived += 1
+                        self.internalChildCare += 1
                         house.totalChilcareNeed_WNH -= 1
                         house.totalUnmetChildCareNeed -= 1
                         agent.privateChildCareNeed_WNH = max(agent.privateChildCareNeed_WNH-1, 0)
@@ -1693,6 +1702,7 @@ class Sim:
                     agent.unmetChildCareNeed = max(agent.unmetChildCareNeed-1, 0)
                     agent.totalChildCareNeed = max(agent.totalChildCareNeed-1, 0)
                     agent.informalChildCareReceived += 1
+                    self.internalChildCare += 1
                     # house.totalChildCareNeed -= 1
                     house.totalUnmetChildCareNeed -= 1
                     if careSlot.day < 5 and careSlot.hour < 10:
@@ -1761,6 +1771,7 @@ class Sim:
                         agent.unmetChildCareNeed = max(agent.unmetChildCareNeed-1, 0)
                         agent.totalChildCareNeed = max(agent.totalChildCareNeed-1, 0)
                         agent.informalChildCareReceived += 1
+                        self.internalChildCare += 1
                         # house.totalChildCareNeed -= 1
                         house.totalUnmetChildCareNeed -= 1
                         if careSlot.day < 5 and careSlot.hour < 10:
@@ -1777,6 +1788,7 @@ class Sim:
                     person.privateSocialCareNeed = max(person.privateSocialCareNeed-1, 0)
                     person.unmetSocialCareNeed = max(person.unmetSocialCareNeed-1, 0)
                     person.informalSocialCareReceived += 1
+                    self.internalSocialCare += 1
                     # house.totalSocialCareNeed -= 1
                     house.totalUnmetSocialCareNeed -= 1
                     if careSlot.hour == -1:
@@ -1834,15 +1846,18 @@ class Sim:
             
         for house in self.map.occupiedHouses:
             house.totalChildCareNeed = sum([(x.privateChildCareNeed_WNH+x.privateChildCareNeed_ONH) for x in house.childCareRecipients])
+            priorityChildren = [x for x in house.childCareRecipients if x.age < self.p['priorityAgeThreshold']]
+            house.totalPriorityCareNeed = sum([(x.privateChildCareNeed_WNH+x.privateChildCareNeed_ONH) for x in priorityChildren])
             house.totalSocialCareNeed = sum([x.privateSocialCareNeed for x in house.socialCareRecipients])
             house.totalCareNeed = house.totalChildCareNeed+house.totalSocialCareNeed
-            # Compute residual care supply of household
-            
-            # Total care supply and care need are used to determine the attraction of a town.
-            # We assume that household will relocate preferably near households of relatives 
-            # providing care (if the have care need) or requiring care (if they have care availability)
-            
-            
+            # Compute care need residual care supply of household after internal provision
+            # (Used in relocation)
+            house.needAfterHouseholdCare = house.totalCareNeed
+            house.availableWeeklySupplies = []
+            for d in range(4):
+                careSupply = sum([x.residualWeeklySupplies[d] for x in house.occupants if x.potentialCarer == True])
+                house.availableWeeklySupplies.append(careSupply)
+         
         # Repeat for the external care.
         # The suppliers in these case are the members of the households of relatives at kinship distance 1
         # First, a receiving housheold is sampled with probability proportional to the residual total care need,
@@ -1850,462 +1865,215 @@ class Sim:
         # Then, the above loop is repeated.
         
         # Repeat twice
-        for d in range(2):
-            kd = d+1
-            for house in self.map.occupiedHouses:
-                house.careSlots[:] = []
-            # Start loopd with extranl informal care
-            housesWSCCN = [x for x in self.map.occupiedHouses if house.totalCareNeed > 0]
-            self.allCareSlots[:] = []
-            for house in housesWSCCN:
-                for i in range(7):
-                    for j in range(24):
-                        if house.childrenCareNeedSchedule[i][j] > 0:
-                            # The suppliers here are all the members of the households at kinship distance 1
-                            slotSuppliers = self.getHouseSuppliers(house, i, j, kd)
-                            if len(slotSuppliers) > 0:
-                                slotChildren = list(house.childrenInNeedByHour[i][j])
-                                if i > 4 or (i < 5 and j > 9):
-                                    if sum([x.privateChildCareNeed_ONH for x in slotChildren]) > 0:
-                                        careWeight = sum([np.exp(self.p['ageCareBeta']*np.power(x.privateChildCareNeed_ONH, self.p['ageDeltaExp'])) for x in slotChildren])
-                                        cost = 0
-                                        supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                        if np.power(supplyWeight, self.p['supplyWeightExp']) > 0:
-                                            probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                        else:
-                                            probIndex = 0
-                                        needSlot = CareSlot(house, i, j, True, careWeight, probIndex, cost, slotChildren, slotSuppliers)
-                                        needSlot.minAge = min([x.age for x in slotChildren if x.privateChildCareNeed_ONH > 0])
-                                        house.careSlots.append(needSlot)
-                                        self.allCareSlots.append(needSlot)
-                                else:
-                                    if sum([x.privateChildCareNeed_WNH for x in slotChildren]) > 0:
-                                        careWeight = sum([np.exp(self.p['ageCareBeta']*np.power(x.privateChildCareNeed_WNH, self.p['ageDeltaExp'])) for x in slotChildren])
-                                        cost = self.p['priceChildCare']*sum([x.privateChildCareNeed_WNH for x in slotChildren])
-                                        supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                        supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
-                                        if np.power(supplyWeight, self.p['supplyWeightExp']) > 0:
-                                            probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                        else:
-                                            probIndex = 0
-                                        needSlot = CareSlot(house, i, j, True, careWeight, probIndex, cost, slotChildren, slotSuppliers)
-                                        needSlot.minAge = min([x.age for x in slotChildren if x.privateChildCareNeed_WNH > 0])
-                                        house.careSlots.append(needSlot)
-                                        self.allCareSlots.append(needSlot)
-                                    
-                socialCareReceivers = [x for x in house.occupants if x.privateSocialCareNeed > 0]
-                for person in socialCareReceivers:
-                    # These agents have a number of fixed hours (associated to day and hour)
-                    # and a number of flexible hours.
-                    for i in range(7):
-                        if person.fixedNeedSchedule[0][0] == 1:
-                            hour = 0
-                            slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
-                            if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
-                                careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
-                                cost = self.p['priceSocialCare']
-                                supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
-                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
-                                house.careSlots.append(needSlot)
-                                self.allCareSlots.append(needSlot)
-                            
-                        if person.fixedNeedSchedule[0][1] == 1:
-                            hour = 1
-                            slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
-                            if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
-                                careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
-                                cost = self.p['priceSocialCare']
-                                supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
-                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
-                                house.careSlots.append(needSlot)
-                                self.allCareSlots.append(needSlot)
-                            
-                        if person.fixedNeedSchedule[1][0] == 1:
-                            hour = 4
-                            slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
-                            if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
-                                careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
-                                cost = self.p['priceSocialCare']
-                                supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost    
-                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
-                                house.careSlots.append(needSlot)
-                                self.allCareSlots.append(needSlot)
-                            
-                        if person.fixedNeedSchedule[1][1] == 1:
-                            hour = 5
-                            slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
-                            if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
-                                careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
-                                cost = self.p['priceSocialCare']
-                                supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
-                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
-                                house.careSlots.append(needSlot)
-                                self.allCareSlots.append(needSlot)
-                            
-                        if person.fixedNeedSchedule[2][0] == 1:
-                            hour = 10
-                            slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
-                            if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
-                                careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
-                                cost = self.p['priceSocialCare']
-                                supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
-                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
-                                house.careSlots.append(needSlot)
-                                self.allCareSlots.append(needSlot)
-                            
-                        if person.fixedNeedSchedule[2][1] == 1:
-                            hour = 11
-                            slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
-                            if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
-                                careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
-                                cost = self.p['priceSocialCare']
-                                supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
-                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
-                                house.careSlots.append(needSlot)
-                                self.allCareSlots.append(needSlot)
-                            
-                        if person.fixedNeedSchedule[3][0] == 1:
-                            hour = 13
-                            slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
-                            if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
-                                careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
-                                cost = self.p['priceSocialCare']
-                                supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
-                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
-                                house.careSlots.append(needSlot)
-                                self.allCareSlots.append(needSlot)
-                            
-                        if person.fixedNeedSchedule[3][1] == 1:
-                            hour = 14
-                            slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
-                            if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
-                                careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
-                                cost = self.p['priceSocialCare']
-                                supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
-                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
-                                house.careSlots.append(needSlot)
-                                self.allCareSlots.append(needSlot)
-                                
-                        for j in range(person.weelyFlexibleNeeds[i]):
-                            slotSuppliers = self.getPersonSuppliers(person, i, -1, kd)
-                            if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
-                                careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
-                                cost = self.p['priceSocialCare']
-                                supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
-                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                needSlot = CareSlot(house, i, -1, False, careWeight, probIndex, cost, [person], slotSuppliers)
-                                house.careSlots.append(needSlot)
-                                self.allCareSlots.append(needSlot)
-            
-            housesWCN = [x for x in self.map.occupiedHouses if len(x.careSlots) > 0]
-            for house in housesWCN:
-                house.priorityCareSlots = [x for x in house.careSlots if x.childCare == True and x.minAge < self.p['priorityAgeThreshold']]
-            housesPCS = [x for x in housesWCN if len(x.priorityCareSlots) > 0 and x.totalPriorityCareNeed > 0]
-            
-            start = time.time()
-            
-            while len(housesPCS) > 0:
-                weightHouses = [float(x.totalPriorityCareNeed) for x in housesPCS]
-                probs = [x/sum(weightHouses) for x in weightHouses]
-                house = np.random.choice(housesPCS, p = probs)
-                # 1 - A care slot is randomly sampled
-                weights = [float(x.probIndex) for x in house.priorityCareSlots]
-                probs = [x/sum(weights) for x in weights]
-                careSlot = np.random.choice(house.priorityCareSlots, p = probs)
-                # 2 - A supplier is sampled based on residual daily (or weekly, for flexible care) supply
-                weightSuppliers = [float(x.residualDailySupplies[careSlot.day]) for x in careSlot.suppliers]
-                if sum(weightSuppliers) == 0:
-                    print [x.residualDailySupplies[careSlot.day] for x in careSlot.suppliers]
-                probs = [x/sum(weightSuppliers) for x in weightSuppliers]
-                supplier = np.random.choice(careSlot.suppliers, p = probs)
-                # 3 - All the time need and time records are updated
-                supplier.weeklyTime[careSlot.day][careSlot.hour] = 0
-                house.childrenCareNeedSchedule[careSlot.day][careSlot.hour] = 0
-                house.householdInformalSupplySchedule[careSlot.day][careSlot.hour] -= 1
-                house.shiftTable[careSlot.day][careSlot.hour] = supplier
-                for d in range(4):
-                    supplier.residualWeeklySupplies[d] -= 1
-                    house.householdInformalSupplies[d] -= 1
-                supplier.residualWeeklySupplies = [max(x, 0) for x in supplier.residualWeeklySupplies]
-                house.householdInformalSupplies = [max(x, 0) for x in house.householdInformalSupplies]
-                supplier.residualDailySupplies[careSlot.day] = max(supplier.residualDailySupplies[careSlot.day]-1, 0)
-                for i in range(len(supplier.residualDailySupplies)):
-                    if supplier.residualWeeklySupplies[0] < supplier.residualDailySupplies[i]:
-                        supplier.residualDailySupplies[i] = supplier.residualWeeklySupplies[0]
-                for agent in careSlot.receivers:
-                    agent.unmetWeeklyNeeds[careSlot.day][careSlot.hour] = 0
-                    agent.unmetChildCareNeed = max(agent.unmetChildCareNeed-1, 0)
-                    agent.totalChildCareNeed = max(agent.totalChildCareNeed-1, 0)
-                    agent.informalChildCareReceived += 1
-                    # house.totalChildCareNeed -= 1
-                    house.totalUnmetChildCareNeed -= 1
-                    if careSlot.day < 5 and careSlot.hour < 10:
-                        agent.privateChildCareNeed_WNH = max(agent.privateChildCareNeed_WNH-1, 0)
-                        house.privateChildCareNeed_WNH -= 1
-                        house.totalChilcareNeed_WNH -= 1
-                    else:
-                        house.totalChilcareNeed_ONH -= 1
-                        agent.privateChildCareNeed_ONH = max(agent.privateChildCareNeed_ONH-1, 0)
-                        house.privateChildCareNeed_ONH -= 1
-                
-                # 4 - The pool of 'active' care slots is updated
-                house.priorityCareSlots.remove(careSlot)
-                house.careSlots.remove(careSlot)
-                self.allCareSlots.remove(careSlot)
-                house.totalChildCareNeed = sum([(x.privateChildCareNeed_WNH+x.privateChildCareNeed_ONH) for x in house.childCareRecipients])
-                house.totalSocialCareNeed = sum([x.privateSocialCareNeed for x in house.socialCareRecipients])
-                house.totalCareNeed = house.totalChildCareNeed+house.totalSocialCareNeed
-                priorityChildren = [x for x in house.childCareRecipients if x.age < self.p['priorityAgeThreshold']]
-                house.totalPriorityCareNeed = sum([(x.privateChildCareNeed_WNH+x.privateChildCareNeed_ONH) for x in priorityChildren])
-                # Update slots
-                self.allCareSlots = [x for x in self.allCareSlots if len([y for y in x.suppliers if y.residualDailySupplies[x.day] > 0]) > 0]
-                for slot in self.allCareSlots:
-                    if slot.childCare == True:
-                        if slot.day < 5 and slot.hour < 10:
-                            careWeight = sum([np.exp(self.p['ageCareBeta']*np.power(x.privateChildCareNeed_WNH, self.p['ageDeltaExp'])) for x in slot.receivers])
-                        else:
-                            careWeight = sum([np.exp(self.p['ageCareBeta']*np.power(x.privateChildCareNeed_ONH, self.p['ageDeltaExp'])) for x in slot.receivers])
-                        slot.careWeight = careWeight
-                        supplyWeight = sum([x.residualWeeklySupplies[0] for x in slot.suppliers])
-                        if slot.day < 5 and slot.hour < 10: # In this case, childcare can be bought
-                            supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/slot.cost
-                        slot.probIndex = slot.careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                    else:
-                        slot.careWeight = np.exp(self.p['socialCareBeta']*np.power(slot.receivers[0].privateSocialCareNeed, self.p['careDeltaExp']))
-                        supplyWeight = sum([x.residualWeeklySupplies[0] for x in slot.suppliers])
-                        supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/slot.cost
-                        slot.probIndex = slot.careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                slots_WNH = [x for x in self.allCareSlots if x.childCare == True and x.day < 5 and x.hour < 10]
-                slots_ONH = [x for x in self.allCareSlots if x.childCare == True and x not in slots_WNH]
-                socialSlots = [x for x in self.allCareSlots if x.childCare == False]
-                self.allCareSlots = [x for x in slots_WNH if sum([y.privateChildCareNeed_WNH for y in x.receivers])> 0] + [x for x in slots_ONH if sum([y.privateChildCareNeed_ONH for y in x.receivers]) > 0]
-                self.allCareSlots += [x for x in socialSlots if sum([y.privateSocialCareNeed for y in x.receivers])> 0]
-                
+        
+        if self.p['externalCare'] == True:
+            self.externalChildCare = 0
+            self.externalSocialCare = 0
+            for d in range(2):
+                kd = d+1
                 for house in self.map.occupiedHouses:
-                    house.priorityCareSlots = [x for x in self.allCareSlots if x.childCare == True and x.minAge < self.p['priorityAgeThreshold'] and x.house == house]
-                housesPCS = [x for x in self.map.occupiedHouses if len(x.priorityCareSlots) > 0 and x.totalPriorityCareNeed > 0]
-                
-            end = time.time()
-            CareProvision4_extim += (end - start)
-            
-        for d in range(2):
-            kd = d+1
-            for house in self.map.occupiedHouses:
-                house.careSlots[:] = []
-            # Start loopd with extranl informal care
-            housesWSCCN = [x for x in self.map.occupiedHouses if house.totalCareNeed > 0]
-            self.allCareSlots[:] = []
-            for house in housesWSCCN:
-                for i in range(7):
-                    for j in range(24):
-                        if house.childrenCareNeedSchedule[i][j] > 0:
-                            # The suppliers here are all the members of the households at kinship distance 1
-                            slotSuppliers = self.getHouseSuppliers(house, i, j, kd)
-                            if len(slotSuppliers) > 0:
-                                slotChildren = list(house.childrenInNeedByHour[i][j])
-                                if i > 4 or (i < 5 and j > 9):
-                                    if sum([x.privateChildCareNeed_ONH for x in slotChildren]) > 0:
-                                        careWeight = sum([np.exp(self.p['ageCareBeta']*np.power(x.privateChildCareNeed_ONH, self.p['ageDeltaExp'])) for x in slotChildren])
-                                        cost = 0
-                                        supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                        if np.power(supplyWeight, self.p['supplyWeightExp']) > 0:
-                                            probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                        else:
-                                            probIndex = 0
-                                        needSlot = CareSlot(house, i, j, True, careWeight, probIndex, cost, slotChildren, slotSuppliers)
-                                        needSlot.minAge = min([x.age for x in slotChildren if x.privateChildCareNeed_ONH > 0])
-                                        house.careSlots.append(needSlot)
-                                        self.allCareSlots.append(needSlot)
-                                else:
-                                    if sum([x.privateChildCareNeed_WNH for x in slotChildren]) > 0:
-                                        careWeight = sum([np.exp(self.p['ageCareBeta']*np.power(x.privateChildCareNeed_WNH, self.p['ageDeltaExp'])) for x in slotChildren])
-                                        cost = self.p['priceChildCare']*sum([x.privateChildCareNeed_WNH for x in slotChildren])
-                                        supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                        supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
-                                        if np.power(supplyWeight, self.p['supplyWeightExp']) > 0:
-                                            probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                        else:
-                                            probIndex = 0
-                                        needSlot = CareSlot(house, i, j, True, careWeight, probIndex, cost, slotChildren, slotSuppliers)
-                                        needSlot.minAge = min([x.age for x in slotChildren if x.privateChildCareNeed_WNH > 0])
-                                        house.careSlots.append(needSlot)
-                                        self.allCareSlots.append(needSlot)
-                                    
-                socialCareReceivers = [x for x in house.occupants if x.privateSocialCareNeed > 0]
-                for person in socialCareReceivers:
-                    # These agents have a number of fixed hours (associated to day and hour)
-                    # and a number of flexible hours.
+                    house.careSlots[:] = []
+                # Start loopd with extranl informal care
+                housesWSCCN = [x for x in self.map.occupiedHouses if house.totalCareNeed > 0]
+                self.allCareSlots[:] = []
+                for house in housesWSCCN:
                     for i in range(7):
-                        if person.fixedNeedSchedule[0][0] == 1:
-                            hour = 0
-                            slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
-                            if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
-                                careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
-                                cost = self.p['priceSocialCare']
-                                supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
-                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
-                                house.careSlots.append(needSlot)
-                                self.allCareSlots.append(needSlot)
-                            
-                        if person.fixedNeedSchedule[0][1] == 1:
-                            hour = 1
-                            slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
-                            if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
-                                careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
-                                cost = self.p['priceSocialCare']
-                                supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
-                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
-                                house.careSlots.append(needSlot)
-                                self.allCareSlots.append(needSlot)
-                            
-                        if person.fixedNeedSchedule[1][0] == 1:
-                            hour = 4
-                            slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
-                            if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
-                                careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
-                                cost = self.p['priceSocialCare']
-                                supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost    
-                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
-                                house.careSlots.append(needSlot)
-                                self.allCareSlots.append(needSlot)
-                            
-                        if person.fixedNeedSchedule[1][1] == 1:
-                            hour = 5
-                            slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
-                            if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
-                                careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
-                                cost = self.p['priceSocialCare']
-                                supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
-                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
-                                house.careSlots.append(needSlot)
-                                self.allCareSlots.append(needSlot)
-                            
-                        if person.fixedNeedSchedule[2][0] == 1:
-                            hour = 10
-                            slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
-                            if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
-                                careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
-                                cost = self.p['priceSocialCare']
-                                supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
-                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
-                                house.careSlots.append(needSlot)
-                                self.allCareSlots.append(needSlot)
-                            
-                        if person.fixedNeedSchedule[2][1] == 1:
-                            hour = 11
-                            slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
-                            if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
-                                careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
-                                cost = self.p['priceSocialCare']
-                                supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
-                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
-                                house.careSlots.append(needSlot)
-                                self.allCareSlots.append(needSlot)
-                            
-                        if person.fixedNeedSchedule[3][0] == 1:
-                            hour = 13
-                            slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
-                            if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
-                                careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
-                                cost = self.p['priceSocialCare']
-                                supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
-                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
-                                house.careSlots.append(needSlot)
-                                self.allCareSlots.append(needSlot)
-                            
-                        if person.fixedNeedSchedule[3][1] == 1:
-                            hour = 14
-                            slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
-                            if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
-                                careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
-                                cost = self.p['priceSocialCare']
-                                supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
-                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
-                                house.careSlots.append(needSlot)
-                                self.allCareSlots.append(needSlot)
+                        for j in range(24):
+                            if house.childrenCareNeedSchedule[i][j] > 0:
+                                # The suppliers here are all the members of the households at kinship distance 1
+                                slotSuppliers = self.getHouseSuppliers(house, i, j, kd)
+                                if len(slotSuppliers) > 0:
+                                    slotChildren = list(house.childrenInNeedByHour[i][j])
+                                    if i > 4 or (i < 5 and j > 9):
+                                        if sum([x.privateChildCareNeed_ONH for x in slotChildren]) > 0:
+                                            careWeight = sum([np.exp(self.p['ageCareBeta']*np.power(x.privateChildCareNeed_ONH, self.p['ageDeltaExp'])) for x in slotChildren])
+                                            cost = 0
+                                            supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                            if np.power(supplyWeight, self.p['supplyWeightExp']) > 0:
+                                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                            else:
+                                                probIndex = 0
+                                            needSlot = CareSlot(house, i, j, True, careWeight, probIndex, cost, slotChildren, slotSuppliers)
+                                            needSlot.minAge = min([x.age for x in slotChildren if x.privateChildCareNeed_ONH > 0])
+                                            house.careSlots.append(needSlot)
+                                            self.allCareSlots.append(needSlot)
+                                    else:
+                                        if sum([x.privateChildCareNeed_WNH for x in slotChildren]) > 0:
+                                            careWeight = sum([np.exp(self.p['ageCareBeta']*np.power(x.privateChildCareNeed_WNH, self.p['ageDeltaExp'])) for x in slotChildren])
+                                            cost = self.p['priceChildCare']*sum([x.privateChildCareNeed_WNH for x in slotChildren])
+                                            supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                            supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
+                                            if np.power(supplyWeight, self.p['supplyWeightExp']) > 0:
+                                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                            else:
+                                                probIndex = 0
+                                            needSlot = CareSlot(house, i, j, True, careWeight, probIndex, cost, slotChildren, slotSuppliers)
+                                            needSlot.minAge = min([x.age for x in slotChildren if x.privateChildCareNeed_WNH > 0])
+                                            house.careSlots.append(needSlot)
+                                            self.allCareSlots.append(needSlot)
+                                        
+                    socialCareReceivers = [x for x in house.occupants if x.privateSocialCareNeed > 0]
+                    for person in socialCareReceivers:
+                        # These agents have a number of fixed hours (associated to day and hour)
+                        # and a number of flexible hours.
+                        for i in range(7):
+                            if person.fixedNeedSchedule[0][0] == 1:
+                                hour = 0
+                                slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
+                                if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
+                                    careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
+                                    cost = self.p['priceSocialCare']
+                                    supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                    supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
+                                    probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                    needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
+                                    house.careSlots.append(needSlot)
+                                    self.allCareSlots.append(needSlot)
                                 
-                        for j in range(person.weelyFlexibleNeeds[i]):
-                            slotSuppliers = self.getPersonSuppliers(person, i, -1, kd)
-                            if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
-                                careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
-                                cost = self.p['priceSocialCare']
-                                supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
-                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                needSlot = CareSlot(house, i, -1, False, careWeight, probIndex, cost, [person], slotSuppliers)
-                                house.careSlots.append(needSlot)
-                                self.allCareSlots.append(needSlot)
-            
-            start = time.time()
-            
-            housesWCN = [x for x in self.map.occupiedHouses if len(x.careSlots) > 0]
-            while len(housesWCN) > 0:
-                # 1 - Sample an house based on total care need
-                weightHouses = [float(x.totalCareNeed) for x in housesWCN]
-                probs = [x/sum(weightHouses) for x in weightHouses]
-                house = np.random.choice(housesWCN, p = probs)
-                # 2 - Sample a slot based on the slots' probIndex (weights)
-                weightSlots = [float(x.probIndex) for x in house.careSlots]
-                probs = [x/sum(weightSlots) for x in weightSlots]
-                careSlot = np.random.choice(house.careSlots, p = probs)
-                # 3 - Sample a supplier for the sampled slot, based on residual daily supplies
-                weightSuppliers = [float(x.residualDailySupplies[careSlot.day]) for x in careSlot.suppliers]
-                probs = [x/sum(weightSuppliers) for x in weightSuppliers]
-                supplier = np.random.choice(careSlot.suppliers, p = probs)
-                # 4 - The hour of care is provided by the supplier to the receiver in the sampled house: update care scores
-                supplier.weeklyTime[careSlot.day][careSlot.hour] = 0
-                house.householdInformalSupplySchedule[careSlot.day][careSlot.hour] -= 1
-                house.shiftTable[careSlot.day][careSlot.hour] = supplier
-                for d in range(4):
-                    supplier.residualWeeklySupplies[d] -= 1
-                    house.householdInformalSupplies[d] -= 1
-                supplier.residualWeeklySupplies = [max(x, 0) for x in supplier.residualWeeklySupplies]
-                house.householdInformalSupplies = [max(x, 0) for x in house.householdInformalSupplies]
-                supplier.residualDailySupplies[careSlot.day] = max(supplier.residualDailySupplies[careSlot.day]-1, 0)
-                for i in range(len(supplier.residualDailySupplies)):
-                    if supplier.residualWeeklySupplies[0] < supplier.residualDailySupplies[i]:
-                        supplier.residualDailySupplies[i] = supplier.residualWeeklySupplies[0]
-                # Update receivers' records
-                if careSlot.childCare == True:
+                            if person.fixedNeedSchedule[0][1] == 1:
+                                hour = 1
+                                slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
+                                if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
+                                    careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
+                                    cost = self.p['priceSocialCare']
+                                    supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                    supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
+                                    probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                    needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
+                                    house.careSlots.append(needSlot)
+                                    self.allCareSlots.append(needSlot)
+                                
+                            if person.fixedNeedSchedule[1][0] == 1:
+                                hour = 4
+                                slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
+                                if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
+                                    careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
+                                    cost = self.p['priceSocialCare']
+                                    supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                    supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost    
+                                    probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                    needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
+                                    house.careSlots.append(needSlot)
+                                    self.allCareSlots.append(needSlot)
+                                
+                            if person.fixedNeedSchedule[1][1] == 1:
+                                hour = 5
+                                slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
+                                if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
+                                    careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
+                                    cost = self.p['priceSocialCare']
+                                    supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                    supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
+                                    probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                    needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
+                                    house.careSlots.append(needSlot)
+                                    self.allCareSlots.append(needSlot)
+                                
+                            if person.fixedNeedSchedule[2][0] == 1:
+                                hour = 10
+                                slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
+                                if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
+                                    careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
+                                    cost = self.p['priceSocialCare']
+                                    supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                    supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
+                                    probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                    needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
+                                    house.careSlots.append(needSlot)
+                                    self.allCareSlots.append(needSlot)
+                                
+                            if person.fixedNeedSchedule[2][1] == 1:
+                                hour = 11
+                                slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
+                                if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
+                                    careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
+                                    cost = self.p['priceSocialCare']
+                                    supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                    supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
+                                    probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                    needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
+                                    house.careSlots.append(needSlot)
+                                    self.allCareSlots.append(needSlot)
+                                
+                            if person.fixedNeedSchedule[3][0] == 1:
+                                hour = 13
+                                slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
+                                if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
+                                    careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
+                                    cost = self.p['priceSocialCare']
+                                    supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                    supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
+                                    probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                    needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
+                                    house.careSlots.append(needSlot)
+                                    self.allCareSlots.append(needSlot)
+                                
+                            if person.fixedNeedSchedule[3][1] == 1:
+                                hour = 14
+                                slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
+                                if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
+                                    careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
+                                    cost = self.p['priceSocialCare']
+                                    supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                    supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
+                                    probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                    needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
+                                    house.careSlots.append(needSlot)
+                                    self.allCareSlots.append(needSlot)
+                                    
+                            for j in range(person.weelyFlexibleNeeds[i]):
+                                slotSuppliers = self.getPersonSuppliers(person, i, -1, kd)
+                                if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
+                                    careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
+                                    cost = self.p['priceSocialCare']
+                                    supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                    supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
+                                    probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                    needSlot = CareSlot(house, i, -1, False, careWeight, probIndex, cost, [person], slotSuppliers)
+                                    house.careSlots.append(needSlot)
+                                    self.allCareSlots.append(needSlot)
+                
+                housesWCN = [x for x in self.map.occupiedHouses if len(x.careSlots) > 0]
+                for house in housesWCN:
+                    house.priorityCareSlots = [x for x in house.careSlots if x.childCare == True and x.minAge < self.p['priorityAgeThreshold']]
+                housesPCS = [x for x in housesWCN if len(x.priorityCareSlots) > 0 and x.totalPriorityCareNeed > 0]
+                
+                start = time.time()
+                
+                while len(housesPCS) > 0:
+                    weightHouses = [float(x.totalPriorityCareNeed) for x in housesPCS]
+                    probs = [x/sum(weightHouses) for x in weightHouses]
+                    house = np.random.choice(housesPCS, p = probs)
+                    # 1 - A care slot is randomly sampled
+                    weights = [float(x.probIndex) for x in house.priorityCareSlots]
+                    probs = [x/sum(weights) for x in weights]
+                    careSlot = np.random.choice(house.priorityCareSlots, p = probs)
+                    # 2 - A supplier is sampled based on residual daily (or weekly, for flexible care) supply
+                    weightSuppliers = [float(x.residualDailySupplies[careSlot.day]) for x in careSlot.suppliers]
+                    if sum(weightSuppliers) == 0:
+                        print [x.residualDailySupplies[careSlot.day] for x in careSlot.suppliers]
+                    probs = [x/sum(weightSuppliers) for x in weightSuppliers]
+                    supplier = np.random.choice(careSlot.suppliers, p = probs)
+                    # 3 - All the time need and time records are updated
+                    supplier.weeklyTime[careSlot.day][careSlot.hour] = 0
                     house.childrenCareNeedSchedule[careSlot.day][careSlot.hour] = 0
+                    house.householdInformalSupplySchedule[careSlot.day][careSlot.hour] -= 1
+                    house.shiftTable[careSlot.day][careSlot.hour] = supplier
+                    for d in range(4):
+                        supplier.residualWeeklySupplies[d] -= 1
+                        house.householdInformalSupplies[d] -= 1
+                    supplier.residualWeeklySupplies = [max(x, 0) for x in supplier.residualWeeklySupplies]
+                    house.householdInformalSupplies = [max(x, 0) for x in house.householdInformalSupplies]
+                    supplier.residualDailySupplies[careSlot.day] = max(supplier.residualDailySupplies[careSlot.day]-1, 0)
+                    for i in range(len(supplier.residualDailySupplies)):
+                        if supplier.residualWeeklySupplies[kd] < supplier.residualDailySupplies[i]:
+                            supplier.residualDailySupplies[i] = supplier.residualWeeklySupplies[kd]
                     for agent in careSlot.receivers:
                         agent.unmetWeeklyNeeds[careSlot.day][careSlot.hour] = 0
                         agent.unmetChildCareNeed = max(agent.unmetChildCareNeed-1, 0)
                         agent.totalChildCareNeed = max(agent.totalChildCareNeed-1, 0)
                         agent.informalChildCareReceived += 1
+                        self.externalChildCare += 1
                         # house.totalChildCareNeed -= 1
                         house.totalUnmetChildCareNeed -= 1
                         if careSlot.day < 5 and careSlot.hour < 10:
@@ -2316,70 +2084,324 @@ class Sim:
                             house.totalChilcareNeed_ONH -= 1
                             agent.privateChildCareNeed_ONH = max(agent.privateChildCareNeed_ONH-1, 0)
                             house.privateChildCareNeed_ONH -= 1
-                else:
-                    supplier.socialWork += 1
-                    person = careSlot.receivers[0]
-                    person.privateSocialCareNeed = max(person.privateSocialCareNeed-1, 0)
-                    person.unmetSocialCareNeed = max(person.unmetSocialCareNeed-1, 0)
-                    person.informalSocialCareReceived += 1
-                    # house.totalSocialCareNeed -= 1
-                    house.totalUnmetSocialCareNeed -= 1
-                    if careSlot.hour == -1:
-                        person.weelyFlexibleNeeds[careSlot.day] = max(person.weelyFlexibleNeeds[careSlot.day]-1, 0)
-                    else:
-                        if careSlot.hour == 0:
-                            person.fixedNeedSchedule[0][0] = 0
-                        elif careSlot.hour == 1:
-                            person.fixedNeedSchedule[0][1] = 0
-                        elif careSlot.hour == 4:
-                            person.fixedNeedSchedule[1][0] = 0
-                        elif careSlot.hour == 5:
-                            person.fixedNeedSchedule[1][1] = 0
-                        elif careSlot.hour == 10:
-                            person.fixedNeedSchedule[2][0] = 0
-                        elif careSlot.hour == 11:
-                            person.fixedNeedSchedule[2][1] = 0
-                        elif careSlot.hour == 13:
-                            person.fixedNeedSchedule[3][0] = 0
-                        elif careSlot.hour == 14:
-                            person.fixedNeedSchedule[3][1] = 0
-                            
-                house.totalChildCareNeed = sum([(x.privateChildCareNeed_WNH+x.privateChildCareNeed_ONH) for x in house.childCareRecipients])
-                house.totalSocialCareNeed = sum([x.privateSocialCareNeed for x in house.socialCareRecipients])
-                house.totalCareNeed = house.totalChildCareNeed+house.totalSocialCareNeed
-                
-                house.careSlots.remove(careSlot)
-                self.allCareSlots.remove(careSlot)
-                # 5 - Update slots of care and list of households
-                
-                notFlexibleSlots = [x for x in self.allCareSlots if x.hour != -1]
-                flexibleSlots = [x for x in self.allCareSlots if x.hour == -1]
-                self.allCareSlots = [x for x in notFlexibleSlots if len([y for y in x.suppliers if y.residualDailySupplies[x.day] > 0]) > 0]
-                self.allCareSlots += [x for x in flexibleSlots if len([y for y in x.suppliers if y.residualDailySupplies[x.day] > 0 and sum(y.weeklyTime[x.day][:10]) > 0]) > 0]
-                for slot in self.allCareSlots:
-                    if slot.childCare == True:
-                        if slot.day < 5 and slot.hour < 10:
-                            careWeight = sum([np.exp(self.p['ageCareBeta']*np.power(x.privateChildCareNeed_WNH, self.p['ageDeltaExp'])) for x in slot.receivers])
+                    
+                    # 4 - The pool of 'active' care slots is updated
+                    house.priorityCareSlots.remove(careSlot)
+                    house.careSlots.remove(careSlot)
+                    self.allCareSlots.remove(careSlot)
+                    house.totalChildCareNeed = sum([(x.privateChildCareNeed_WNH+x.privateChildCareNeed_ONH) for x in house.childCareRecipients])
+                    house.totalSocialCareNeed = sum([x.privateSocialCareNeed for x in house.socialCareRecipients])
+                    house.totalCareNeed = house.totalChildCareNeed+house.totalSocialCareNeed
+                    priorityChildren = [x for x in house.childCareRecipients if x.age < self.p['priorityAgeThreshold']]
+                    house.totalPriorityCareNeed = sum([(x.privateChildCareNeed_WNH+x.privateChildCareNeed_ONH) for x in priorityChildren])
+                    # Update slots
+                    self.allCareSlots = [x for x in self.allCareSlots if len([y for y in x.suppliers if y.residualDailySupplies[x.day] > 0]) > 0]
+                    for slot in self.allCareSlots:
+                        if slot.childCare == True:
+                            if slot.day < 5 and slot.hour < 10:
+                                careWeight = sum([np.exp(self.p['ageCareBeta']*np.power(x.privateChildCareNeed_WNH, self.p['ageDeltaExp'])) for x in slot.receivers])
+                            else:
+                                careWeight = sum([np.exp(self.p['ageCareBeta']*np.power(x.privateChildCareNeed_ONH, self.p['ageDeltaExp'])) for x in slot.receivers])
+                            slot.careWeight = careWeight
+                            supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slot.suppliers])
+                            if slot.day < 5 and slot.hour < 10: # In this case, childcare can be bought
+                                supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/slot.cost
+                            slot.probIndex = slot.careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
                         else:
-                            careWeight = sum([np.exp(self.p['ageCareBeta']*np.power(x.privateChildCareNeed_ONH, self.p['ageDeltaExp'])) for x in slot.receivers])
-                        slot.careWeight = careWeight
-                        supplyWeight = sum([x.residualWeeklySupplies[0] for x in slot.suppliers])
-                        if slot.day < 5 and slot.hour < 10: # In this case, childcare can be bought
+                            slot.careWeight = np.exp(self.p['socialCareBeta']*np.power(slot.receivers[0].privateSocialCareNeed, self.p['careDeltaExp']))
+                            supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slot.suppliers])
                             supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/slot.cost
-                        slot.probIndex = slot.careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                    else:
-                        slot.careWeight = np.exp(self.p['socialCareBeta']*np.power(slot.receivers[0].privateSocialCareNeed, self.p['careDeltaExp']))
-                        supplyWeight = sum([x.residualWeeklySupplies[0] for x in slot.suppliers])
-                        supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/slot.cost
-                        slot.probIndex = slot.careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                slots_WNH = [x for x in self.allCareSlots if x.childCare == True and x.day < 5 and x.hour < 10]
-                slots_ONH = [x for x in self.allCareSlots if x.childCare == True and x not in slots_WNH]
-                socialSlots = [x for x in self.allCareSlots if x.childCare == False]
-                self.allCareSlots = [x for x in slots_WNH if sum([y.privateChildCareNeed_WNH for y in x.receivers])> 0] + [x for x in slots_ONH if sum([y.privateChildCareNeed_ONH for y in x.receivers])> 0]
-                self.allCareSlots += [x for x in socialSlots if sum([y.privateSocialCareNeed for y in x.receivers])> 0]
+                            slot.probIndex = slot.careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                    slots_WNH = [x for x in self.allCareSlots if x.childCare == True and x.day < 5 and x.hour < 10]
+                    slots_ONH = [x for x in self.allCareSlots if x.childCare == True and x not in slots_WNH]
+                    socialSlots = [x for x in self.allCareSlots if x.childCare == False]
+                    self.allCareSlots = [x for x in slots_WNH if sum([y.privateChildCareNeed_WNH for y in x.receivers])> 0] + [x for x in slots_ONH if sum([y.privateChildCareNeed_ONH for y in x.receivers]) > 0]
+                    self.allCareSlots += [x for x in socialSlots if sum([y.privateSocialCareNeed for y in x.receivers])> 0]
+                    
+                    for house in self.map.occupiedHouses:
+                        house.priorityCareSlots = [x for x in self.allCareSlots if x.childCare == True and x.minAge < self.p['priorityAgeThreshold'] and x.house == house]
+                    housesPCS = [x for x in self.map.occupiedHouses if len(x.priorityCareSlots) > 0 and x.totalPriorityCareNeed > 0]
+                    
+                end = time.time()
+                CareProvision4_extim += (end - start)
+            
+            for d in range(2):
+                kd = d+1
                 for house in self.map.occupiedHouses:
-                    house.careSlots = [x for x in self.allCareSlots if x.house == house]
+                    house.careSlots[:] = []
+                # Start loopd with extranl informal care
+                housesWSCCN = [x for x in self.map.occupiedHouses if house.totalCareNeed > 0]
+                self.allCareSlots[:] = []
+                for house in housesWSCCN:
+                    for i in range(7):
+                        for j in range(24):
+                            if house.childrenCareNeedSchedule[i][j] > 0:
+                                # The suppliers here are all the members of the households at kinship distance 1
+                                slotSuppliers = self.getHouseSuppliers(house, i, j, kd)
+                                if len(slotSuppliers) > 0:
+                                    slotChildren = list(house.childrenInNeedByHour[i][j])
+                                    if i > 4 or (i < 5 and j > 9):
+                                        if sum([x.privateChildCareNeed_ONH for x in slotChildren]) > 0:
+                                            careWeight = sum([np.exp(self.p['ageCareBeta']*np.power(x.privateChildCareNeed_ONH, self.p['ageDeltaExp'])) for x in slotChildren])
+                                            cost = 0
+                                            supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                            if np.power(supplyWeight, self.p['supplyWeightExp']) > 0:
+                                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                            else:
+                                                probIndex = 0
+                                            needSlot = CareSlot(house, i, j, True, careWeight, probIndex, cost, slotChildren, slotSuppliers)
+                                            needSlot.minAge = min([x.age for x in slotChildren if x.privateChildCareNeed_ONH > 0])
+                                            house.careSlots.append(needSlot)
+                                            self.allCareSlots.append(needSlot)
+                                    else:
+                                        if sum([x.privateChildCareNeed_WNH for x in slotChildren]) > 0:
+                                            careWeight = sum([np.exp(self.p['ageCareBeta']*np.power(x.privateChildCareNeed_WNH, self.p['ageDeltaExp'])) for x in slotChildren])
+                                            cost = self.p['priceChildCare']*sum([x.privateChildCareNeed_WNH for x in slotChildren])
+                                            supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                            supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
+                                            if np.power(supplyWeight, self.p['supplyWeightExp']) > 0:
+                                                probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                            else:
+                                                probIndex = 0
+                                            needSlot = CareSlot(house, i, j, True, careWeight, probIndex, cost, slotChildren, slotSuppliers)
+                                            needSlot.minAge = min([x.age for x in slotChildren if x.privateChildCareNeed_WNH > 0])
+                                            house.careSlots.append(needSlot)
+                                            self.allCareSlots.append(needSlot)
+                                        
+                    socialCareReceivers = [x for x in house.occupants if x.privateSocialCareNeed > 0]
+                    for person in socialCareReceivers:
+                        # These agents have a number of fixed hours (associated to day and hour)
+                        # and a number of flexible hours.
+                        for i in range(7):
+                            if person.fixedNeedSchedule[0][0] == 1:
+                                hour = 0
+                                slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
+                                if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
+                                    careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
+                                    cost = self.p['priceSocialCare']
+                                    supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                    supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
+                                    probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                    needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
+                                    house.careSlots.append(needSlot)
+                                    self.allCareSlots.append(needSlot)
+                                
+                            if person.fixedNeedSchedule[0][1] == 1:
+                                hour = 1
+                                slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
+                                if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
+                                    careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
+                                    cost = self.p['priceSocialCare']
+                                    supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                    supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
+                                    probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                    needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
+                                    house.careSlots.append(needSlot)
+                                    self.allCareSlots.append(needSlot)
+                                
+                            if person.fixedNeedSchedule[1][0] == 1:
+                                hour = 4
+                                slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
+                                if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
+                                    careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
+                                    cost = self.p['priceSocialCare']
+                                    supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                    supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost    
+                                    probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                    needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
+                                    house.careSlots.append(needSlot)
+                                    self.allCareSlots.append(needSlot)
+                                
+                            if person.fixedNeedSchedule[1][1] == 1:
+                                hour = 5
+                                slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
+                                if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
+                                    careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
+                                    cost = self.p['priceSocialCare']
+                                    supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                    supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
+                                    probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                    needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
+                                    house.careSlots.append(needSlot)
+                                    self.allCareSlots.append(needSlot)
+                                
+                            if person.fixedNeedSchedule[2][0] == 1:
+                                hour = 10
+                                slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
+                                if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
+                                    careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
+                                    cost = self.p['priceSocialCare']
+                                    supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                    supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
+                                    probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                    needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
+                                    house.careSlots.append(needSlot)
+                                    self.allCareSlots.append(needSlot)
+                                
+                            if person.fixedNeedSchedule[2][1] == 1:
+                                hour = 11
+                                slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
+                                if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
+                                    careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
+                                    cost = self.p['priceSocialCare']
+                                    supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                    supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
+                                    probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                    needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
+                                    house.careSlots.append(needSlot)
+                                    self.allCareSlots.append(needSlot)
+                                
+                            if person.fixedNeedSchedule[3][0] == 1:
+                                hour = 13
+                                slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
+                                if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
+                                    careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
+                                    cost = self.p['priceSocialCare']
+                                    supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                    supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
+                                    probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                    needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
+                                    house.careSlots.append(needSlot)
+                                    self.allCareSlots.append(needSlot)
+                                
+                            if person.fixedNeedSchedule[3][1] == 1:
+                                hour = 14
+                                slotSuppliers = self.getPersonSuppliers(person, i, hour, kd)
+                                if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
+                                    careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
+                                    cost = self.p['priceSocialCare']
+                                    supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                    supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
+                                    probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                    needSlot = CareSlot(house, i, hour, False, careWeight, probIndex, cost, [person], slotSuppliers)
+                                    house.careSlots.append(needSlot)
+                                    self.allCareSlots.append(needSlot)
+                                    
+                            for j in range(person.weelyFlexibleNeeds[i]):
+                                slotSuppliers = self.getPersonSuppliers(person, i, -1, kd)
+                                if len(slotSuppliers) > 0 and person.privateSocialCareNeed > 0:
+                                    careWeight = np.exp(self.p['socialCareBeta']*np.power(person.privateSocialCareNeed, self.p['careDeltaExp']))
+                                    cost = self.p['priceSocialCare']
+                                    supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slotSuppliers])
+                                    supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
+                                    probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                    needSlot = CareSlot(house, i, -1, False, careWeight, probIndex, cost, [person], slotSuppliers)
+                                    house.careSlots.append(needSlot)
+                                    self.allCareSlots.append(needSlot)
+                
+                start = time.time()
+                
                 housesWCN = [x for x in self.map.occupiedHouses if len(x.careSlots) > 0]
+                while len(housesWCN) > 0:
+                    # 1 - Sample an house based on total care need
+                    weightHouses = [float(x.totalCareNeed) for x in housesWCN]
+                    probs = [x/sum(weightHouses) for x in weightHouses]
+                    house = np.random.choice(housesWCN, p = probs)
+                    # 2 - Sample a slot based on the slots' probIndex (weights)
+                    weightSlots = [float(x.probIndex) for x in house.careSlots]
+                    probs = [x/sum(weightSlots) for x in weightSlots]
+                    careSlot = np.random.choice(house.careSlots, p = probs)
+                    # 3 - Sample a supplier for the sampled slot, based on residual daily supplies
+                    weightSuppliers = [float(x.residualDailySupplies[careSlot.day]) for x in careSlot.suppliers]
+                    probs = [x/sum(weightSuppliers) for x in weightSuppliers]
+                    supplier = np.random.choice(careSlot.suppliers, p = probs)
+                    # 4 - The hour of care is provided by the supplier to the receiver in the sampled house: update care scores
+                    supplier.weeklyTime[careSlot.day][careSlot.hour] = 0
+                    house.householdInformalSupplySchedule[careSlot.day][careSlot.hour] -= 1
+                    house.shiftTable[careSlot.day][careSlot.hour] = supplier
+                    for d in range(4):
+                        supplier.residualWeeklySupplies[d] -= 1
+                        house.householdInformalSupplies[d] -= 1
+                    supplier.residualWeeklySupplies = [max(x, 0) for x in supplier.residualWeeklySupplies]
+                    house.householdInformalSupplies = [max(x, 0) for x in house.householdInformalSupplies]
+                    supplier.residualDailySupplies[careSlot.day] = max(supplier.residualDailySupplies[careSlot.day]-1, 0)
+                    for i in range(len(supplier.residualDailySupplies)):
+                        if supplier.residualWeeklySupplies[kd] < supplier.residualDailySupplies[i]:
+                            supplier.residualDailySupplies[i] = supplier.residualWeeklySupplies[kd]
+                    # Update receivers' records
+                    if careSlot.childCare == True:
+                        house.childrenCareNeedSchedule[careSlot.day][careSlot.hour] = 0
+                        for agent in careSlot.receivers:
+                            agent.unmetWeeklyNeeds[careSlot.day][careSlot.hour] = 0
+                            agent.unmetChildCareNeed = max(agent.unmetChildCareNeed-1, 0)
+                            agent.totalChildCareNeed = max(agent.totalChildCareNeed-1, 0)
+                            agent.informalChildCareReceived += 1
+                            self.externalChildCare += 1
+                            # house.totalChildCareNeed -= 1
+                            house.totalUnmetChildCareNeed -= 1
+                            if careSlot.day < 5 and careSlot.hour < 10:
+                                agent.privateChildCareNeed_WNH = max(agent.privateChildCareNeed_WNH-1, 0)
+                                house.privateChildCareNeed_WNH -= 1
+                                house.totalChilcareNeed_WNH -= 1
+                            else:
+                                house.totalChilcareNeed_ONH -= 1
+                                agent.privateChildCareNeed_ONH = max(agent.privateChildCareNeed_ONH-1, 0)
+                                house.privateChildCareNeed_ONH -= 1
+                    else:
+                        supplier.socialWork += 1
+                        person = careSlot.receivers[0]
+                        person.privateSocialCareNeed = max(person.privateSocialCareNeed-1, 0)
+                        person.unmetSocialCareNeed = max(person.unmetSocialCareNeed-1, 0)
+                        person.informalSocialCareReceived += 1
+                        self.externalSocialCare += 1
+                        # house.totalSocialCareNeed -= 1
+                        house.totalUnmetSocialCareNeed -= 1
+                        if careSlot.hour == -1:
+                            person.weelyFlexibleNeeds[careSlot.day] = max(person.weelyFlexibleNeeds[careSlot.day]-1, 0)
+                        else:
+                            if careSlot.hour == 0:
+                                person.fixedNeedSchedule[0][0] = 0
+                            elif careSlot.hour == 1:
+                                person.fixedNeedSchedule[0][1] = 0
+                            elif careSlot.hour == 4:
+                                person.fixedNeedSchedule[1][0] = 0
+                            elif careSlot.hour == 5:
+                                person.fixedNeedSchedule[1][1] = 0
+                            elif careSlot.hour == 10:
+                                person.fixedNeedSchedule[2][0] = 0
+                            elif careSlot.hour == 11:
+                                person.fixedNeedSchedule[2][1] = 0
+                            elif careSlot.hour == 13:
+                                person.fixedNeedSchedule[3][0] = 0
+                            elif careSlot.hour == 14:
+                                person.fixedNeedSchedule[3][1] = 0
+                                
+                    house.totalChildCareNeed = sum([(x.privateChildCareNeed_WNH+x.privateChildCareNeed_ONH) for x in house.childCareRecipients])
+                    house.totalSocialCareNeed = sum([x.privateSocialCareNeed for x in house.socialCareRecipients])
+                    house.totalCareNeed = house.totalChildCareNeed+house.totalSocialCareNeed
+                    
+                    house.careSlots.remove(careSlot)
+                    self.allCareSlots.remove(careSlot)
+                    # 5 - Update slots of care and list of households
+                    
+                    notFlexibleSlots = [x for x in self.allCareSlots if x.hour != -1]
+                    flexibleSlots = [x for x in self.allCareSlots if x.hour == -1]
+                    self.allCareSlots = [x for x in notFlexibleSlots if len([y for y in x.suppliers if y.residualDailySupplies[x.day] > 0]) > 0]
+                    self.allCareSlots += [x for x in flexibleSlots if len([y for y in x.suppliers if y.residualDailySupplies[x.day] > 0 and sum(y.weeklyTime[x.day][:10]) > 0]) > 0]
+                    for slot in self.allCareSlots:
+                        if slot.childCare == True:
+                            if slot.day < 5 and slot.hour < 10:
+                                careWeight = sum([np.exp(self.p['ageCareBeta']*np.power(x.privateChildCareNeed_WNH, self.p['ageDeltaExp'])) for x in slot.receivers])
+                            else:
+                                careWeight = sum([np.exp(self.p['ageCareBeta']*np.power(x.privateChildCareNeed_ONH, self.p['ageDeltaExp'])) for x in slot.receivers])
+                            slot.careWeight = careWeight
+                            supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slot.suppliers])
+                            if slot.day < 5 and slot.hour < 10: # In this case, childcare can be bought
+                                supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/slot.cost
+                            slot.probIndex = slot.careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                        else:
+                            slot.careWeight = np.exp(self.p['socialCareBeta']*np.power(slot.receivers[0].privateSocialCareNeed, self.p['careDeltaExp']))
+                            supplyWeight = sum([x.residualWeeklySupplies[kd] for x in slot.suppliers])
+                            supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/slot.cost
+                            slot.probIndex = slot.careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                    slots_WNH = [x for x in self.allCareSlots if x.childCare == True and x.day < 5 and x.hour < 10]
+                    slots_ONH = [x for x in self.allCareSlots if x.childCare == True and x not in slots_WNH]
+                    socialSlots = [x for x in self.allCareSlots if x.childCare == False]
+                    self.allCareSlots = [x for x in slots_WNH if sum([y.privateChildCareNeed_WNH for y in x.receivers])> 0] + [x for x in slots_ONH if sum([y.privateChildCareNeed_ONH for y in x.receivers])> 0]
+                    self.allCareSlots += [x for x in socialSlots if sum([y.privateSocialCareNeed for y in x.receivers])> 0]
+                    for house in self.map.occupiedHouses:
+                        house.careSlots = [x for x in self.allCareSlots if x.house == house]
+                    housesWCN = [x for x in self.map.occupiedHouses if len(x.careSlots) > 0]
                 
             
                 
@@ -2569,6 +2591,7 @@ class Sim:
                                 agent.totalChildCareNeed = max(agent.totalChildCareNeed-1, 0)
                                 agent.privateChildCareNeed_ONH = max(agent.privateChildCareNeed_ONH-1, 0)
                                 agent.informalChildCareReceived += 1
+                                self.internalChildCare += 1
                                 house.privateChildCareNeed_ONH -= 1
                                 house.totalUnmetChildCareNeed -= 1
                                 house.totalChilcareNeed_ONH -= 1
@@ -2587,6 +2610,7 @@ class Sim:
                                 agent.totalChildCareNeed = max(agent.totalChildCareNeed-1, 0)
                                 agent.privateChildCareNeed_WNH = max(agent.privateChildCareNeed_WNH-1, 0)
                                 agent.informalChildCareReceived += 1
+                                self.internalChildCare += 1
                                 house.privateChildCareNeed_WNH -= 1
                                 house.totalUnmetChildCareNeed -= 1
                                 house.totalChilcareNeed_WNH -= 1
@@ -2616,6 +2640,7 @@ class Sim:
                                 agent.totalChildCareNeed = max(agent.totalChildCareNeed-1, 0)
                                 agent.privateChildCareNeed_WNH = max(agent.privateChildCareNeed_WNH-1, 0)
                                 agent.formalChildCareReceived += 1
+                                self.internalChildCare += 1
                                 house.privateChildCareNeed_WNH -= 1
                                 house.totalUnmetChildCareNeed -= 1
                                 house.totalChilcareNeed_WNH -= 1
@@ -2674,6 +2699,7 @@ class Sim:
                                 agent.totalChildCareNeed = max(agent.totalChildCareNeed-1, 0)
                                 agent.privateChildCareNeed_ONH = max(agent.privateChildCareNeed_ONH-1, 0)
                                 agent.informalChildCareReceived += 1
+                                self.internalChildCare += 1
                                 house.privateChildCareNeed_ONH -= 1
                                 house.totalUnmetChildCareNeed -= 1
                                 house.totalChilcareNeed_ONH -= 1
@@ -2692,6 +2718,7 @@ class Sim:
                                     agent.totalChildCareNeed = max(agent.totalChildCareNeed-1, 0)
                                     agent.privateChildCareNeed_WNH = max(agent.privateChildCareNeed_WNH-1, 0)
                                     agent.informalChildCareReceived += 1
+                                    self.internalChildCare += 1
                                     house.privateChildCareNeed_WNH -= 1
                                     house.totalUnmetChildCareNeed -= 1
                                     house.totalChilcareNeed_WNH -= 1
@@ -2721,6 +2748,7 @@ class Sim:
                                     agent.totalChildCareNeed = max(agent.totalChildCareNeed-1, 0)
                                     agent.privateChildCareNeed_WNH = max(agent.privateChildCareNeed_WNH-1, 0)
                                     agent.formalChildCareReceived += 1
+                                    self.internalChildCare += 1
                                     house.privateChildCareNeed_WNH -= 1
                                     house.totalUnmetChildCareNeed -= 1
                                     house.totalChilcareNeed_WNH -= 1
@@ -2740,6 +2768,7 @@ class Sim:
                             person.privateSocialCareNeed = max(receiver.privateSocialCareNeed-1, 0)
                             person.unmetSocialCareNeed = max(receiver.unmetSocialCareNeed-1, 0)
                             person.informalSocialCareReceived += 1
+                            self.internalSocialCare += 1
                             # house.totalSocialCareNeed -= 1
                             
                             if careSlot.hour == -1:
@@ -2787,6 +2816,7 @@ class Sim:
                             person.privateSocialCareNeed = max(receiver.privateSocialCareNeed-1, 0)
                             person.unmetSocialCareNeed = max(receiver.unmetSocialCareNeed-1, 0)
                             person.formalSocialCareReceived += 1
+                            self.internalSocialCare += 1
                             # house.totalSocialCareNeed -= 1
                             
                             if careSlot.hour == -1:
@@ -2903,7 +2933,7 @@ class Sim:
             supplyingHouses = [x for x in house.d2Households]
         suppliers = []
         for h in supplyingHouses:
-            houseSuppliers = [x for x in h.occupants if x.potentialCarer == True and x.weeklyTime[day][hour] == 1 and x.residualDailySupplies[day] > 0]
+            houseSuppliers = [x for x in h.occupants if x.potentialCarer == True and x.weeklyTime[day][hour] == 1 and x.residualDailySupplies[day] > 0 and x.residualWeeklySupplies[d] > 0]
             suppliers.extend(houseSuppliers)
         return suppliers
     
@@ -2915,11 +2945,11 @@ class Sim:
             supplyingHouses = [x for x in person.d2Households]
         if hour != -1:
             for h in supplyingHouses:
-                houseSuppliers = [x for x in h.occupants if x.potentialCarer == True and x.weeklyTime[day][hour] == 1 and x.residualDailySupplies[day] > 0]
+                houseSuppliers = [x for x in h.occupants if x.potentialCarer == True and x.weeklyTime[day][hour] == 1 and x.residualDailySupplies[day] > 0 and x.residualWeeklySupplies[d] > 0]
                 suppliers.extend(houseSuppliers)
         else:
             for h in supplyingHouses:
-                houseSuppliers = [x for x in h.occupants if x.potentialCarer == True and x.residualDailySupplies[day] > 0 and sum(x.weeklyTime[day][:10]) > 0]
+                houseSuppliers = [x for x in h.occupants if x.potentialCarer == True and x.residualDailySupplies[day] > 0 and sum(x.weeklyTime[day][:10]) > 0 and x.residualWeeklySupplies[d] > 0]
                 suppliers.extend(houseSuppliers)
         return suppliers
         
@@ -6933,7 +6963,7 @@ class Sim:
         totalResidualSocialCareNeed = sum([x.unmetSocialCareNeed for x in self.pop.livingPeople if x.careNeedLevel > 0])
         self.sharePublicSocialCare = 0
         if totalSocialCareNeed > 0:
-            self.sharePublicSocialCare = 1.0 - float(totalResidualSocialCareNeed)/float(totalSocialCareNeed)
+            self.sharePublicSocialCare = float(self.publicSocialCare)/float(totalSocialCareNeed)
      
     def weeklySocialCareNeeds(self, careNeed):
         print 'Work in progress....'
@@ -7166,11 +7196,11 @@ class Sim:
         children = [x for x in self.pop.livingPeople if x.age > 0 and x.age < self.p['ageTeenagers']]
         totalChildCareNeed = sum([x.hoursChildCareDemand for x in children])
         totalUnmetChildCareNeed = sum([x.unmetChildCareNeed for x in children])
-      
+        
         self.costPublicChildCare = self.publicChildCare*self.p['priceChildCare']
         self.sharePublicChildCare = 0
         if totalChildCareNeed > 0:
-            self.sharePublicChildCare = 1.0 - float(totalUnmetChildCareNeed)/float(totalChildCareNeed)
+            self.sharePublicChildCare = float(self.publicChildCare)/float(totalUnmetChildCareNeed)
             
     def householdCareSupply(self):
         self.aggregateSchedule = [0]*24
@@ -9935,7 +9965,10 @@ class Sim:
         share_over20Hours_FamilyCarers = 0
         if len(familyCarers) > 0:
             share_over20Hours_FamilyCarers = float(len(over20Hours_FamilyCarers))/float(len(familyCarers))
-        averageHoursOfCare = np.mean(informalCaresSupplied)
+        numSocialCarers = len(informalSocialCarers)
+        averageHoursOfCare = 0
+        if numSocialCarers > 0:
+            averageHoursOfCare = np.mean(informalCaresSupplied)
         carers_40to64 = [x for x in informalSocialCarers if x.age >= 40 and x.age <= 64]
         over65_carers = [x for x in informalSocialCarers if x.age >= 65]
         share_40to64_carers = 0
@@ -9976,6 +10009,11 @@ class Sim:
         netIQ4 = np.median([x.householdNetIncome for x in self.map.occupiedHouses if x.netIncomeQuintile == 3])
         netIQ5 = np.median([x.householdNetIncome for x in self.map.occupiedHouses if x.netIncomeQuintile == 4])
         
+        shareInternalCare = 0
+        totalCare = self.internalChildCare+self.internalSocialCare+self.externalChildCare+self.externalSocialCare
+        if totalCare > 0:
+            shareInternalCare = (self.internalChildCare+self.internalSocialCare)/totalCare
+        
         outputs = [self.year, self.month, self.period, currentPop, everLivedPop, numHouseholds, averageHouseholdSize, self.marriageTally, 
                    marriagePropNow, self.divorceTally, shareSingleParents, shareFemaleSingleParent, taxPayers, taxBurden, familyCareRatio, 
                    shareEmployed, shareWorkHours, self.publicSocialCare, self.costPublicSocialCare, self.sharePublicSocialCare, 
@@ -9984,7 +10022,7 @@ class Sim:
                    self.totalHospitalizationCost, self.socialClassShares[0], self.socialClassShares[1], self.socialClassShares[2], 
                    self.socialClassShares[3], self.socialClassShares[4], totalInformalChildCare, formalChildCare, totalUnmetChildCareNeed, 
                    childcareIncomeShare, shareInformalChildCare, shareCareGivers, ratioFemaleMaleCarers, shareMaleCarers, shareFemaleCarers, ratioWage, 
-                   ratioIncome, shareFamilyCarer, share_over20Hours_FamilyCarers, averageHoursOfCare, share_40to64_carers, 
+                   ratioIncome, shareFamilyCarer, share_over20Hours_FamilyCarers, numSocialCarers, averageHoursOfCare, share_40to64_carers, 
                    share_over65_carers, share_10PlusHours_over70, totalSocialCareNeed, totalInformalSocialCare, totalFormalSocialCare, 
                    totalUnmetSocialCareNeed, totalSocialCare, share_InformalSocialCare, share_UnmetSocialCareNeed, 
                    totalOWSC, shareOWSC, totalCostOWSC, singleHousehold_UC, coupleHousehold_UC, incomePerCapita_Single, incomePerCapita_Couple,
@@ -9993,10 +10031,11 @@ class Sim:
                    q3_socialCareNeed, q3_informalSocialCare, q3_formalSocialCare, q3_unmetSocialCareNeed, q3_outOfWorkSocialCare,
                    q4_socialCareNeed, q4_informalSocialCare, q4_formalSocialCare, q4_unmetSocialCareNeed, q4_outOfWorkSocialCare,
                    q5_socialCareNeed, q5_informalSocialCare, q5_formalSocialCare, q5_unmetSocialCareNeed, q5_outOfWorkSocialCare,
-                   self.grossDomesticProduct, publicCareToGDP, self.onhUnmetChildcareNeed, self.medianChildCareNeedONH,
+                   self.grossDomesticProduct, publicCareToGDP, self.onhUnmetChildcareNeed, self.medianChildCareNeedONH, self.totalHoursOffWork,
                    origIQ1, origIQ2, origIQ3, origIQ4, origIQ5, dispIQ1, dispIQ2, dispIQ3, dispIQ4, dispIQ5,
                    netIQ1, netIQ2, netIQ3, netIQ4, netIQ5, self.socialClassShares[0], self.socialClassShares[1], self.socialClassShares[2],
-                   self.socialClassShares[3], self.socialClassShares[4]]
+                   self.socialClassShares[3], self.socialClassShares[4], self.internalChildCare, self.internalSocialCare, self.externalChildCare, 
+                   self.externalSocialCare, shareInternalCare]
         
         
         dataMapFile = 'DataMap_' + str(self.year) + '.csv'
