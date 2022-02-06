@@ -23,7 +23,7 @@ def meta_params():
     m['numRepeats'] = 1
     m['initialPop'] = 500
     m['startYear'] = 1860
-    m['endYear'] = 2050
+    m['endYear'] = 2040
     m['thePresent'] = 2012
     m['statsCollectFrom'] = 1960
     m['policyStartYear'] = 2020
@@ -32,6 +32,9 @@ def meta_params():
     m['maxStartAge'] = 45
     m['verboseDebugging'] = False
     m['singleRunGraphs'] = False
+    m['withBenefits'] = True
+    m['externalCare'] = True
+    m['careAllocationFromYear'] = m['startYear']
     m['favouriteSeed'] = int(time.time())
     m['loadFromFile'] = False
     m['numberClasses'] = 5
@@ -198,7 +201,8 @@ def init_params():
     p['wageVar'] = 0.1
     p['workDiscountingTime'] = 1.0
     p['weeklyHours'] = [40.0, 20.0, 0.0, 0.0, 0.0] 
-    p['maternityLeaveDuration'] = 12
+    p['maternityLeaveDuration'] = 9
+    
     # Care transition params
     p['unmetNeedExponent'] = 1.0
     p['careBias'] = 0.9
@@ -447,6 +451,8 @@ def init_params():
     p['capitalHighThreshold'] = 16000.0
     p['savingUCRate'] = 250
     p['capitalIncome'] = 4.35
+    p['maternityLeaveIncomeReduction'] = 0.9
+    p['minStatutoryMaternityPay'] = 151.97
     
     # Child Benefit
     p['childBenefitIncomeThreshold'] = 50000.0
@@ -758,7 +764,7 @@ if __name__ == "__main__":
         graphsDummy.to_csv("graphsParams.csv", index=False)
         
     
-    parametersFromFiles = True
+    parametersFromFiles = False
     
     scenariosParams = []
     policiesParams = [[[]]]

@@ -53,6 +53,25 @@ class House:
         self.careNetwork = nx.DiGraph()
         self.demandNetwork = nx.Graph()
         self.townAttractiveness = []
+        self.availableWeeklySupplies = []
+        self.needAfterHouseholdCare = 0
+        
+        self.residualCareNeed_PreFormal = 0
+        self.residualCareNeed_PostFormal = 0
+        self.unmetChildCareNeed_Pre = 0
+        self.totalCareNeed_Pre = 0
+        self.totalPriorityCareSlots_Pre = 0
+        self.totalChildCareSlots_Pre = 0
+        self.totalOutOfWorkChildCare_Pre = 0
+        self.totalOutOfWorkChildCare_Post = 0
+        self.onhSlots_Pre = 0
+        self.wnhSlots_Pre = 0
+        self.slotWithCareSuppliers_ONH = 0
+        self.slotWithCareSuppliers_WNH = 0
+        self.numCostGreaterThanWage = 0
+        self.numNoSuppliers = 0
+        self.numCostSmallerThanWage = 0
+        
         
         self.netCareDemand = 0
         self.careAttractionFactor = 0

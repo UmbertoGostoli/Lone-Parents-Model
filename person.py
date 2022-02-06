@@ -38,6 +38,7 @@ class Person:
         self.birthdate = birthYear
         self.wage = wage
         self.income = inc
+        self.previousIncome = inc
         self.disposableIncome = inc
         self.pension = 0
         self.benefits = 0
@@ -70,6 +71,7 @@ class Person:
         self.careNetwork = nx.DiGraph()
         self.d1Households = []
         self.d2Households = []
+        self.householdsToHelp = []
         self.careDemand = 0
         self.unmetCareNeed = 0
         self.cumulativeUnmetNeed = 0
