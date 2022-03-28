@@ -24,6 +24,7 @@ class CostUnit:
         self.suppliers = suppliers
         
 class CareSlot:
+    counter = 1
     def __init__ (self, house, day, hour, isChildcare, careWeight, probIndex, cost, receivers, suppliers):
         self.house = house
         self.day = day
@@ -38,3 +39,5 @@ class CareSlot:
         self.numSuppliers = len(suppliers)
         self.ageReceivers = [x.age for x in receivers]
         self.minAge = min(self.ageReceivers)
+        self.id = CareSlot.counter
+        CareSlot.counter += 1
