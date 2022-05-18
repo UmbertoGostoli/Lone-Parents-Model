@@ -61,7 +61,7 @@ class Sim:
                         'publicChildCare', 'costPublicChildCare', 'sharePublicChildCare', 'costTaxFreeChildCare', 
                         'totalTaxRevenue', 'totalPensionRevenue', 'pensionExpenditure', 'totalHospitalizationCost', 
                         'classShare_1', 'classShare_2', 'classShare_3', 'classShare_4', 'classShare_5', 'totalInformalChildCare', 
-                        'formalChildCare', 'totalUnmetChildCareNeed', 'childcareIncomeShare', 'shareInformalChildCare', 'shareCareGivers', 
+                        'formalChildCare', 'totalUnmetChildCareNeed', 'childcareIncomeShare', 'medianChildCareIncomeShare', 'shareInformalChildCare', 'shareCareGivers', 
                         'ratioFemaleMaleCarers', 'shareMaleCarers', 'shareFemaleCarers', 'ratioWage', 'ratioIncome', 
                         'shareFamilyCarer', 'share_over20Hours_FamilyCarers', 'numSocialCarers', 'averageHoursOfCare', 'share_40to64_carers', 
                         'share_over65_carers', 'share_10PlusHours_over70', 'totalSocialCareNeed', 
@@ -74,7 +74,8 @@ class Sim:
                         'q4_socialCareNeed', 'q4_informalSocialCare', 'q4_formalSocialCare', 'q4_unmetSocialCareNeed', 'q4_outOfWorkSocialCare',
                         'q5_socialCareNeed', 'q5_informalSocialCare', 'q5_formalSocialCare', 'q5_unmetSocialCareNeed', 'q5_outOfWorkSocialCare',
                         'grossDomesticProduct', 'publicCareToGDP', 'onhUnmetChildcareNeed', 'medianChildCareNeedONH',
-                        'totalHoursOffWork', 'indIQ1', 'indIQ2', 'indIQ3', 'indIQ4', 'indIQ5', 'origIQ1', 'origIQ2', 'origIQ3', 'origIQ4', 'origIQ5', 
+                        'totalHoursOffWork', 'indIQ1_D', 'indIQ2_D', 'indIQ3_D', 'indIQ4_D', 'indIQ5_D', 'indIQ1_G', 'indIQ2_G', 
+                        'indIQ3_G', 'indIQ4_G', 'indIQ5_G', 'origIQ1', 'origIQ2', 'origIQ3', 'origIQ4', 'origIQ5', 
                         'dispIQ1', 'dispIQ2', 'dispIQ3', 'dispIQ4', 'dispIQ5', 'netIQ1', 'netIQ2', 'netIQ3', 'netIQ4', 'etIQ5', 'shareSES_1', 
                         'shareSES_2', 'shareSES_3', 'shareSES_4', 'shareSES_5', 'internalChildCare', 'internalSocialCare', 'externalChildCare', 
                         'externalSocialCare', 'shareInternalCare', 'aggregateChildBenefits', 'aggregateDisabledChildrenBenefits', 'aggregatePIP', 
@@ -180,6 +181,12 @@ class Sim:
         self.textUpdateList = []
         
         self.socialCareNetwork = nx.DiGraph()
+        
+        self.retiredTransitions = [[[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], 
+                              [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+                              [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+                              [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+                              [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]]
 
         self.aggregateSchedule = [0]*24
         # if self.p['interactiveGraphics']:
@@ -1203,12 +1210,15 @@ class Sim:
     def doCareTransitions_UCN(self, policyFolder, month):
         """Consider the possibility of each person coming to require care."""
         peopleNotInCriticalCare = [x for x in self.pop.livingPeople if x.careNeedLevel < self.p['numCareLevels']-1]
+        
+        
+        
+        
         for person in peopleNotInCriticalCare:
-            age = self.year - person.birthdate
             if person.sex == 'male':
-                ageCareProb = ((math.exp(age/self.p['maleAgeCareScaling']))*self.p['personCareProb'] )
+                ageCareProb = ((math.exp(float(person.age)/self.p['maleAgeCareScaling']))*self.p['personCareProb'] )
             else:
-                ageCareProb = ((math.exp(age/self.p['femaleAgeCareScaling']))*self.p['personCareProb'] )
+                ageCareProb = ((math.exp(float(person.age)/self.p['femaleAgeCareScaling']))*self.p['personCareProb'] )
                 
             baseProb = self.p['baseCareProb'] + ageCareProb
             
@@ -1229,12 +1239,12 @@ class Sim:
             
             
             if np.random.random() < careProb and np.random.choice([x+1 for x in range(12)]) == month:
+                
+                
+                    
+                
                 baseTransition = self.baseRate(self.p['careBias'], 1.0-self.p['careTransitionRate'])
-                if baseTransition >= 1.0:
-                    print 'Error: base transition >= 1'
-                    # sys.exit()
-                    
-                    
+                
                 if person.careNeedLevel > 0:
                     unmetNeedFactor = 1.0/math.exp(self.p['unmetNeedExponent']*person.averageShareUnmetNeed)
                 else:
@@ -1251,13 +1261,21 @@ class Sim:
                 initialCareNeedLevel = person.careNeedLevel
                 person.careNeedLevel += stepCare
                 
+                
+                
                 if person.careNeedLevel >= self.p['numCareLevels']:
                     person.careNeedLevel = int(self.p['numCareLevels'] - 1)
+                    stepCare = int(self.p['numCareLevels']-1)-initialCareNeedLevel
+                    
+                if person.status == 'retired':
+                    self.retiredTransitions[person.classRank][initialCareNeedLevel][stepCare-1] += 1
+                    
+                    
                 if person.careNeedLevel > 1:
                     # person.status = 'inactive'
-                    person.wage = 0
-                    person.income = 0
-                    person.workingHours = 0
+#                    person.wage = 0
+#                    person.income = 0
+#                    person.workingHours = 0
                     person.weeklyTime = [[0]*24, [0]*24, [0]*24, [0]*24, [0]*24, [0]*24, [0]*24]
                     person.maxWeeklySupplies = [0, 0, 0, 0]
                     person.residualDailySupplies = [0]*7
@@ -1275,6 +1293,9 @@ class Sim:
                     with open(os.path.join(policyFolder, "Log.csv"), "a") as file:
                         writer = csv.writer(file, delimiter = ",", lineterminator='\r')
                         writer.writerow([self.year, messageString])
+        
+        print 'Retired transitions by class: ' + str(self.retiredTransitions)
+        
                 
     def needsWeeklySchedule(self, careLevel):
         careNeed = self.p['careDemandInHours'][careLevel]
@@ -1371,7 +1392,7 @@ class Sim:
         
     def computeAggregateSchedule(self):
         self.aggregateSchedule[:] = [0]*24
-        workers = [x for x in self.pop.livingPeople if x.status == 'worker' if x.maternityStatus == False and x.careNeedLevel == 0]
+        workers = [x for x in self.pop.livingPeople if x.status == 'worker' and x.maternityStatus == False and x.careNeedLevel == 0]
         for worker in workers:
             for i in range(7):
                 if i+1 not in worker.daysOff:
@@ -1391,7 +1412,35 @@ class Sim:
         
         print 'Doing allocateWeeklyCare'
         
+        ### Debugging: check working hours
+        ### Number of workers with zero working hours
+        zeroAWH = [x for x in self.pop.livingPeople if x.status == 'worker' and x.availableWorkingHours == 0]
+        print 'Zero available working hours workers (pre): ' + str(len(zeroAWH))
+        disabledWorkers = [x for x in zeroAWH if x.careNeedLevel > 1]
+        print 'Disabled workers working hours workers (pre): ' + str(len(disabledWorkers))
+        zeroWH = [x for x in self.pop.livingPeople if x.status == 'worker' and x.workingHours == 0]
+        print 'Zero working hours workers (pre): ' + str(len(zeroWH))
         
+        maternalLeaveWorkers = [x for x in zeroAWH if x.maternityStatus == True]
+        print 'Workers in maternity leave: ' + str(len(maternalLeaveWorkers))
+        
+        
+        totalIncome = sum([x.totalPotentialIncome for x in self.map.occupiedHouses])
+        totalCostForUnmetChildcare = 0
+        totalInformalSocialCare = 0
+        totalUnmetSocialCare = 0
+        for house in self.map.occupiedHouses:
+            totalCostForUnmetChildcare += sum([x.privateChildCareNeed_WNH for x in house.childCareRecipients])*self.p['priceChildCare']
+            totalUnmetSocialCare += sum([x.privateSocialCareNeed for x in house.socialCareRecipients])
+        
+        totalInformalSocialCare = sum([x.informalSocialCareReceived for x in self.pop.livingPeople])
+            
+        if totalIncome > 0:
+            print 'Child care cost before informl care: ' + str(totalCostForUnmetChildcare/totalIncome)
+        
+        if totalInformalSocialCare > 0:
+            print 'Unmet social care before informal care: ' + str(float(totalUnmetSocialCare)/float(totalInformalSocialCare))
+
         # self.publicChildCare = 0
         self.parentsChildCare = 0
         self.householdChildCare = 0
@@ -1418,117 +1467,137 @@ class Sim:
         self.internalChildCare = 0
         self.internalSocialCare = 0
         
-        housesChildcareNeeds = [x for x in self.map.occupiedHouses if x.totalChildCareNeed > 0]
-        for house in housesChildcareNeeds:
-            household = [x for x in house.occupants]
-            parents = [x for x in household if x.independentStatus == True]
-            for i in range(7):
-                for j in range(24):
-                    if house.childrenCareNeedSchedule[i][j] > 0:
-                        slotSuppliers = [x for x in parents if x.weeklyTime[i][j] == 1]
-                        if len(slotSuppliers) > 0:
-                            slotChildren = [x for x in house.childrenInNeedByHour[i][j]]
-                            if i > 4 or (i < 5 and j > 9):
-                                if sum([x.privateChildCareNeed_ONH for x in slotChildren]) > 0:
-                                    careWeight = sum([np.exp(self.p['ageCareBeta']*np.power(x.privateChildCareNeed_ONH, self.p['ageDeltaExp'])) for x in slotChildren])
-                                    cost = 0
-                                    supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                    if np.power(supplyWeight, self.p['supplyWeightExp']) > 0:
-                                        probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                    else:
-                                        probIndex = 0
-                                    needSlot = CareSlot(house, i, j, True, careWeight, probIndex, cost, slotChildren, slotSuppliers)
-                                    needSlot.minAge = min([x.age for x in slotChildren if x.privateChildCareNeed_ONH > 0])
-                                    house.careSlots.append(needSlot)
-                            else:
-                                if sum([x.privateChildCareNeed_WNH for x in slotChildren]) > 0:
-                                    careWeight = sum([np.exp(self.p['ageCareBeta']*np.power(x.privateChildCareNeed_WNH, self.p['ageDeltaExp'])) for x in slotChildren])
-                                    cost = self.p['priceChildCare']*sum([x.privateChildCareNeed_WNH for x in slotChildren])
-                                    supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
-                                    supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
-                                    if np.power(supplyWeight, self.p['supplyWeightExp']) > 0:
-                                        probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
-                                    else:
-                                        probIndex = 0
-                                    needSlot = CareSlot(house, i, j, True, careWeight, probIndex, cost, slotChildren, slotSuppliers)
-                                    needSlot.minAge = min([x.age for x in slotChildren if x.privateChildCareNeed_WNH > 0])
-                                    house.careSlots.append(needSlot)
+        #### Debugging code
+        
+        if self.p['commentOutParentsCare'] == False:
+            
+            ####   Add the possibility of parents to buy formal care (based on their income)
+            #### The within-nursery-hours care slots to be satisfied by informal care are randomly added, based on the parents' income.
+            ### The other are satisfied by formal child care.
+        
+            housesChildcareNeeds = [x for x in self.map.occupiedHouses if x.totalChildCareNeed > 0]
+            for house in housesChildcareNeeds:
+                household = [x for x in house.occupants]
+                parents = [x.father for x in house.childCareRecipients]+[x.mother for x in house.childCareRecipients]
+                parents = [x for x in parents if x in household]
+                for i in range(7):
+                    for j in range(24):
+                        if house.childrenCareNeedSchedule[i][j] > 0:
+                            slotSuppliers = [x for x in parents if x.weeklyTime[i][j] == 1]
+                            if len(slotSuppliers) > 0:
+                                slotChildren = [x for x in house.childrenInNeedByHour[i][j]]
+                                if i > 4 or (i < 5 and j > 9):
+                                    if sum([x.privateChildCareNeed_ONH for x in slotChildren]) > 0:
+                                        careWeight = sum([np.exp(self.p['ageCareBeta']*np.power(x.privateChildCareNeed_ONH, self.p['ageDeltaExp'])) for x in slotChildren])
+                                        cost = 0
+                                        supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
+                                        if np.power(supplyWeight, self.p['supplyWeightExp']) > 0:
+                                            probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                        else:
+                                            probIndex = 0
+                                        needSlot = CareSlot(house, i, j, True, careWeight, probIndex, cost, slotChildren, slotSuppliers)
+                                        needSlot.minAge = min([x.age for x in slotChildren if x.privateChildCareNeed_ONH > 0])
+                                        house.careSlots.append(needSlot)
+                                else:
+                                    if sum([x.privateChildCareNeed_WNH for x in slotChildren]) > 0:
+                                        careWeight = sum([np.exp(self.p['ageCareBeta']*np.power(x.privateChildCareNeed_WNH, self.p['ageDeltaExp'])) for x in slotChildren])
+                                        cost = self.p['priceChildCare']*sum([x.privateChildCareNeed_WNH for x in slotChildren])
+                                        supplyWeight = sum([x.residualWeeklySupplies[0] for x in slotSuppliers])
+                                        supplyWeight += self.p['incomeCareFactor']*max(house.totalIncome-house.povertyLineIncome, 0.0)/cost
+                                        if np.power(supplyWeight, self.p['supplyWeightExp']) > 0:
+                                            probIndex = careWeight/np.power(supplyWeight, self.p['supplyWeightExp'])
+                                        else:
+                                            probIndex = 0
+                                        needSlot = CareSlot(house, i, j, True, careWeight, probIndex, cost, slotChildren, slotSuppliers)
+                                        needSlot.minAge = min([x.age for x in slotChildren if x.privateChildCareNeed_WNH > 0])
+                                        house.careSlots.append(needSlot)
+                                    
+                
+                # Care provision 1: parents allocating all their free time
+                
+                start = time.time()
+                
+                wnhSlots = [x for x in house.careSlots if x.day < 5 and x.hour < 10]
+                onhSlots = [x for x in house.careSlots if x not in wnhSlots]
+                totResidualSupply = sum([x.parentSupply for x in parents])
+                for careSlot in onhSlots:
+                    if totResidualSupply > 0:
+                        privateCare = sum([x.privateChildCareNeed_ONH for x in careSlot.receivers])
+                        if privateCare > 0:
+                            supplier = np.random.choice(parents)
+                            supplier.weeklyTime[careSlot.day][careSlot.hour] = 0
+                            totResidualSupply -= 1
+                            house.childrenCareNeedSchedule[careSlot.day][careSlot.hour] = 0
+                            house.householdInformalSupplySchedule[careSlot.day][careSlot.hour] -= 1
+                            house.childrenInNeedByHour[careSlot.day][careSlot.hour] = []
+                            house.shiftTable[careSlot.day][careSlot.hour] = supplier
+                            for d in range(4):
+                                supplier.residualWeeklySupplies[d] -= 1
+                                house.householdInformalSupplies[d] -= 1
+                            supplier.residualWeeklySupplies = [max(x, 0) for x in supplier.residualWeeklySupplies]
+                            house.householdInformalSupplies = [max(x, 0) for x in house.householdInformalSupplies]
+                            if len(supplier.residualDailySupplies) < careSlot.day+1:
+                                print careSlot.day
+                                print supplier.residualDailySupplies
+                                print supplier.age
+                                print supplier.status
+                                print supplier.careNeedLevel
                                 
+                            supplier.residualDailySupplies[careSlot.day] = max(supplier.residualDailySupplies[careSlot.day]-1, 0)
+                            for i in range(len(supplier.residualDailySupplies)):
+                                if supplier.residualWeeklySupplies[0] < supplier.residualDailySupplies[i]:
+                                    supplier.residualDailySupplies[i] = supplier.residualWeeklySupplies[0]
+                            for agent in careSlot.receivers:
+                                agent.unmetWeeklyNeeds[careSlot.day][careSlot.hour] = 0
+                                agent.unmetChildCareNeed = max(agent.unmetChildCareNeed-1, 0)
+                                agent.informalChildCareReceived += 1
+                                self.internalChildCare += 1
+                                agent.totalChildCareNeed = max(agent.totalChildCareNeed-1, 0)
+                                agent.privateChildCareNeed_ONH = max(agent.privateChildCareNeed_ONH-1, 0)
+                                house.privateChildCareNeed_ONH -= 1
+                                house.totalChilcareNeed_ONH -= 1
+                                house.totalUnmetChildCareNeed -= 1
+                    else:
+                        break
+                
+                wnhSlots.sort(key=operator.attrgetter("numReceivers"))
+                for careSlot in wnhSlots:
+                    if totResidualSupply > 0:
+                        privateCare = sum([x.privateChildCareNeed_WNH for x in careSlot.receivers])
+                        if privateCare > 0:
+                            supplier = np.random.choice(parents)
+                            supplier.weeklyTime[careSlot.day][careSlot.hour] = 0
+                            totResidualSupply -= 1
+                            house.childrenCareNeedSchedule[careSlot.day][careSlot.hour] = 0
+                            house.householdInformalSupplySchedule[careSlot.day][careSlot.hour] -= 1
+                            house.childrenInNeedByHour[careSlot.day][careSlot.hour] = []
+                            house.shiftTable[careSlot.day][careSlot.hour] = supplier
+                            for d in range(4):
+                                supplier.residualWeeklySupplies[d] -= 1
+                                house.householdInformalSupplies[d] -= 1
+                            supplier.residualWeeklySupplies = [max(x, 0) for x in supplier.residualWeeklySupplies]
+                            house.householdInformalSupplies = [max(x, 0) for x in house.householdInformalSupplies]
+                            supplier.residualDailySupplies[careSlot.day] = max(supplier.residualDailySupplies[careSlot.day]-1, 0)
+                            for i in range(len(supplier.residualDailySupplies)):
+                                if supplier.residualWeeklySupplies[0] < supplier.residualDailySupplies[i]:
+                                    supplier.residualDailySupplies[i] = supplier.residualWeeklySupplies[0]
+                            for agent in careSlot.receivers:
+                                agent.unmetWeeklyNeeds[careSlot.day][careSlot.hour] = 0
+                                agent.unmetChildCareNeed = max(agent.unmetChildCareNeed-1, 0)
+                                agent.totalChildCareNeed = max(agent.totalChildCareNeed-1, 0)
+                                agent.informalChildCareReceived += 1
+                                self.internalChildCare += 1
+                                house.totalChilcareNeed_WNH -= 1
+                                house.totalUnmetChildCareNeed -= 1
+                                agent.privateChildCareNeed_WNH = max(agent.privateChildCareNeed_WNH-1, 0)
+                                house.privateChildCareNeed_WNH -= 1
+                    else:
+                        break
+                            
+                end = time.time()
+                CareProvision1_extim += (end - start)
             
-            # Care provision 1: parents alocating all their free time
-            
-            start = time.time()
-            
-            wnhSlots = [x for x in house.careSlots if x.day < 5 and x.hour < 10]
-            onhSlots = [x for x in house.careSlots if x not in wnhSlots]
-            for careSlot in onhSlots:
-                privateCare = sum([x.privateChildCareNeed_ONH for x in careSlot.receivers])
-                if privateCare > 0:
-                    supplier = np.random.choice(parents)
-                    supplier.weeklyTime[careSlot.day][careSlot.hour] = 0
-                    house.childrenCareNeedSchedule[careSlot.day][careSlot.hour] = 0
-                    house.householdInformalSupplySchedule[careSlot.day][careSlot.hour] -= 1
-                    house.childrenInNeedByHour[careSlot.day][careSlot.hour] = []
-                    house.shiftTable[careSlot.day][careSlot.hour] = supplier
-                    for d in range(4):
-                        supplier.residualWeeklySupplies[d] -= 1
-                        house.householdInformalSupplies[d] -= 1
-                    supplier.residualWeeklySupplies = [max(x, 0) for x in supplier.residualWeeklySupplies]
-                    house.householdInformalSupplies = [max(x, 0) for x in house.householdInformalSupplies]
-                    if len(supplier.residualDailySupplies) < careSlot.day+1:
-                        print careSlot.day
-                        print supplier.residualDailySupplies
-                        print supplier.age
-                        print supplier.status
-                        print supplier.careNeedLevel
-                        
-                    supplier.residualDailySupplies[careSlot.day] = max(supplier.residualDailySupplies[careSlot.day]-1, 0)
-                    for i in range(len(supplier.residualDailySupplies)):
-                        if supplier.residualWeeklySupplies[0] < supplier.residualDailySupplies[i]:
-                            supplier.residualDailySupplies[i] = supplier.residualWeeklySupplies[0]
-                    for agent in careSlot.receivers:
-                        agent.unmetWeeklyNeeds[careSlot.day][careSlot.hour] = 0
-                        agent.unmetChildCareNeed = max(agent.unmetChildCareNeed-1, 0)
-                        agent.informalChildCareReceived += 1
-                        self.internalChildCare += 1
-                        agent.totalChildCareNeed = max(agent.totalChildCareNeed-1, 0)
-                        agent.privateChildCareNeed_ONH = max(agent.privateChildCareNeed_ONH-1, 0)
-                        house.privateChildCareNeed_ONH -= 1
-                        house.totalChilcareNeed_ONH -= 1
-                        house.totalUnmetChildCareNeed -= 1
-            
-            wnhSlots.sort(key=operator.attrgetter("numReceivers"))
-            for careSlot in wnhSlots:
-                privateCare = sum([x.privateChildCareNeed_WNH for x in careSlot.receivers])
-                if privateCare > 0:
-                    supplier = np.random.choice(parents)
-                    supplier.weeklyTime[careSlot.day][careSlot.hour] = 0
-                    house.childrenCareNeedSchedule[careSlot.day][careSlot.hour] = 0
-                    house.householdInformalSupplySchedule[careSlot.day][careSlot.hour] -= 1
-                    house.childrenInNeedByHour[careSlot.day][careSlot.hour] = []
-                    house.shiftTable[careSlot.day][careSlot.hour] = supplier
-                    for d in range(4):
-                        supplier.residualWeeklySupplies[d] -= 1
-                        house.householdInformalSupplies[d] -= 1
-                    supplier.residualWeeklySupplies = [max(x, 0) for x in supplier.residualWeeklySupplies]
-                    house.householdInformalSupplies = [max(x, 0) for x in house.householdInformalSupplies]
-                    supplier.residualDailySupplies[careSlot.day] = max(supplier.residualDailySupplies[careSlot.day]-1, 0)
-                    for i in range(len(supplier.residualDailySupplies)):
-                        if supplier.residualWeeklySupplies[0] < supplier.residualDailySupplies[i]:
-                            supplier.residualDailySupplies[i] = supplier.residualWeeklySupplies[0]
-                    for agent in careSlot.receivers:
-                        agent.unmetWeeklyNeeds[careSlot.day][careSlot.hour] = 0
-                        agent.unmetChildCareNeed = max(agent.unmetChildCareNeed-1, 0)
-                        agent.totalChildCareNeed = max(agent.totalChildCareNeed-1, 0)
-                        agent.informalChildCareReceived += 1
-                        self.internalChildCare += 1
-                        house.totalChilcareNeed_WNH -= 1
-                        house.totalUnmetChildCareNeed -= 1
-                        agent.privateChildCareNeed_WNH = max(agent.privateChildCareNeed_WNH-1, 0)
-                        house.privateChildCareNeed_WNH -= 1
-                        
-            end = time.time()
-            CareProvision1_extim += (end - start)
+        
             
         for house in self.map.occupiedHouses:
             house.totalChildCareNeed = sum([(x.privateChildCareNeed_WNH+x.privateChildCareNeed_ONH) for x in house.childCareRecipients])
@@ -1782,6 +1851,7 @@ class Sim:
                 supplier.residualWeeklySupplies = [max(x, 0) for x in supplier.residualWeeklySupplies]
                 house.householdInformalSupplies = [max(x, 0) for x in house.householdInformalSupplies]
                 supplier.residualDailySupplies[careSlot.day] = max(supplier.residualDailySupplies[careSlot.day]-1, 0)
+                supplier.childWork += 1
                 for i in range(len(supplier.residualDailySupplies)):
                     if supplier.residualWeeklySupplies[0] < supplier.residualDailySupplies[i]:
                         supplier.residualDailySupplies[i] = supplier.residualWeeklySupplies[0]
@@ -1865,6 +1935,8 @@ class Sim:
             
             end = time.time()
             CareProvision3_extim += (end - start)
+            
+            
             
         for house in self.map.occupiedHouses:
             house.totalChildCareNeed = sum([(x.privateChildCareNeed_WNH+x.privateChildCareNeed_ONH) for x in house.childCareRecipients])
@@ -2482,6 +2554,7 @@ class Sim:
                     supplier.residualWeeklySupplies = [max(x, 0) for x in supplier.residualWeeklySupplies]
                     house.householdInformalSupplies = [max(x, 0) for x in house.householdInformalSupplies]
                     supplier.residualDailySupplies[careSlot.day] = max(supplier.residualDailySupplies[careSlot.day]-1, 0)
+                    supplier.childWork += 1
                     for i in range(len(supplier.residualDailySupplies)):
                         if supplier.residualWeeklySupplies[kd] < supplier.residualDailySupplies[i]:
                             supplier.residualDailySupplies[i] = supplier.residualWeeklySupplies[kd]
@@ -2627,6 +2700,40 @@ class Sim:
         #        from welfare, this is used, so no worker will need to allocate free working hours.
         #        Otherwise, the highest-wage worker will allocate free working hours to pay for the formal care provided.
         # - case B: there aren't occupied workers. In this case, only formal care is provided.
+        
+        # Income is allocated to childcare and social care.
+        # If the amount is too lo it could be due to:
+        # - too much informal care allocated previously. In this case, there is ittle unmet care need left
+        # - agents prefer to take time off work rather than working and paying for childcare.
+        # Check:
+        # 1 - how much childcare and social care is left after the informal provision? Compute the potential cost as share of income.
+        # 2 - What is the share of time took off work to provide for child and social care over the total out-of-income care?
+        
+        ###  Total unmet child and social care  ######
+        ### Which share of income would cost to satisfy unmet childcare?
+        ### Which share of total informal social care is the unmet social care?
+        totalIncome = sum([x.totalPotentialIncome for x in self.map.occupiedHouses])
+        totalCostForUnmetChildcare = 0
+        totalInformalSocialCare = 0
+        totalUnmetSocialCare = 0
+        for house in self.map.occupiedHouses:
+            totalCostForUnmetChildcare += sum([x.privateChildCareNeed_WNH for x in house.childCareRecipients])*self.p['priceChildCare']
+            totalUnmetSocialCare += sum([x.privateSocialCareNeed for x in house.socialCareRecipients])
+        
+        totalInformalSocialCare = sum([x.informalSocialCareReceived for x in self.pop.livingPeople])
+            
+        if totalIncome > 0:
+            print 'Child care cost after informl care: ' + str(totalCostForUnmetChildcare/totalIncome)
+        
+        if totalInformalSocialCare > 0:
+            print 'Unmet social care after informal care: ' + str(float(totalUnmetSocialCare)/float(totalInformalSocialCare))
+        
+        ### Create the variable 'total out-of-work informal care'
+        ### Show as a share of total 'out-of-income' care.
+        oowInformalChildCare = 0
+        ooiChildCare = 0
+        oowInformalSocialCare = 0
+        ooiSocialCare = 0
         
         for house in self.map.occupiedHouses:
             house.costFormalCare = 0
@@ -2799,6 +2906,7 @@ class Sim:
                 
                 # 2 - Check: if slot is ONH or WNH
                 if careSlot.day > 4 or (careSlot.day < 5 and careSlot.hour > 9):
+                # In this case, is ONH: formal care is NOT possible
                 # Sort wage from low to high
                     careSlot.suppliers.sort(key=operator.attrgetter("wage"))
                     careSupplier = careSlot.suppliers[0]
@@ -2811,6 +2919,20 @@ class Sim:
                     maxIncomeForCare = max(maxIncomeForCare-careSupplier.wage, 0.0)
                     careSupplier.availableWorkingHours -= 1
                     careSupplier.freeWorkingHours -= 1
+                    
+                    # Debugging variables
+                    oowInformalChildCare += 1
+                    ooiChildCare += 1
+                    
+                    ####    Debuggging code   ##############################################
+                    if careSupplier.availableWorkingHours < 0:
+                        print 'Error: working hours cannot be negative!'
+                        print 'Check no. 1'
+                        print 'Working hours: ' + str(careSupplier.availableWorkingHours)
+                        print 'Available hours: ' + str(careSupplier.freeWorkingHours)
+                        sys.exit()
+                    ###########################################################################
+                    
                     house.shiftTable[careSlot.day][careSlot.hour] = supplier
                     for agent in careSlot.receivers:
                         agent.unmetWeeklyNeeds[careSlot.day][careSlot.hour] = 0
@@ -2840,6 +2962,22 @@ class Sim:
                         maxIncomeForCare = max(maxIncomeForCare-careSupplier.wage, 0.0)
                         careSupplier.availableWorkingHours -= 1
                         careSupplier.freeWorkingHours -= 1
+                        
+                        # Debugging variables
+                        oowInformalChildCare += 1
+                        ooiChildCare += 1
+                        
+                        ####    Debuggging code   ##############################################
+                        if careSupplier.availableWorkingHours < 0:
+                            print 'Error: working hours cannot be negative!'
+                            print 'Check no. 2'
+                            print 'Working hours: ' + str(careSupplier.availableWorkingHours)
+                            print 'Available hours: ' + str(careSupplier.freeWorkingHours)
+                            sys.exit()
+                        ###########################################################################
+                        
+                        
+                        
                         house.shiftTable[careSlot.day][careSlot.hour] = supplier
                         for agent in careSlot.receivers:
                             agent.unmetWeeklyNeeds[careSlot.day][careSlot.hour] = 0
@@ -2886,6 +3024,9 @@ class Sim:
                         house.costFormalCare += additionalCost
                         house.costFormalChildCare += additionalCost
                         
+                        # Debugging variables
+                        ooiChildCare += 1
+                        
                         # Degugging code
 #                            if house not in self.householdsWithFormalChildCare and self.periodFormalCare == False:
 #                                self.householdsWithFormalChildCare.append(house)
@@ -2918,7 +3059,7 @@ class Sim:
                 slots_ONH = [x for x in priorityCareSlots if x not in slots_WNH and len([y for y in x.suppliers if y.afterCareJS[x.day][x.hour] == 1 and y.freeWorkingHours > 0]) > 0]
                 priorityCareSlots = [x for x in slots_WNH if sum([y.privateChildCareNeed_WNH for y in x.receivers])> 0] + [x for x in slots_ONH if sum([y.privateChildCareNeed_ONH for y in x.receivers])> 0]
                 for slot in priorityCareSlots:
-                    if careSlot.day > 4 or (careSlot.day < 5 and careSlot.hour > 9):
+                    if slot.day > 4 or (slot.day < 5 and slot.hour > 9):
                         slot.suppliers = [x for x in suppliers if x.afterCareJS[slot.day][slot.hour] == 1 and x.freeWorkingHours > 0]
                     else:
                         slot.suppliers = [x for x in suppliers if x.freeWorkingHours > 0]
@@ -2930,9 +3071,9 @@ class Sim:
             # Update list fo care slots: probability of being served proportional to product between unmet social care and residual income for care
             remainingSlots = []
             for slot in house.careSlots:
-                if careSlot.childCare == True:
+                if slot.childCare == True:
                     careWeight = sum([x.privateChildCareNeed_WNH+x.privateChildCareNeed_ONH for x in slot.receivers])*maxIncomeForCare
-                    if careSlot.day > 4 or (careSlot.day < 5 and careSlot.hour > 9):
+                    if slot.day > 4 or (slot.day < 5 and slot.hour > 9):
                         slot.suppliers = [x for x in suppliers if x.afterCareJS[slot.day][slot.hour] == 1 and x.freeWorkingHours > 0]
                     else:
                         slot.suppliers = [x for x in suppliers if x.freeWorkingHours > 0]
@@ -2969,6 +3110,23 @@ class Sim:
                         careSupplier.outOfWorkChildCare += 1
                         careSupplier.availableWorkingHours -= 1
                         careSupplier.freeWorkingHours -= 1
+                        careSupplier.childWork += 1
+                        
+                        # Debugging variables
+                        oowInformalChildCare += 1
+                        ooiChildCare += 1
+                        
+                        ####    Debuggging code   ##############################################
+                        if careSupplier.availableWorkingHours < 0:
+                            print 'Error: working hours cannot be negative!'
+                            print 'Check no. 3'
+                            print 'Working hours: ' + str(careSupplier.availableWorkingHours)
+                            print 'Available hours: ' + str(careSupplier.freeWorkingHours)
+                            sys.exit()
+                        ###########################################################################
+                        
+                        
+                        
                         house.shiftTable[careSlot.day][careSlot.hour] = supplier
                         maxIncomeForCare = max(maxIncomeForCare-careSupplier.wage, 0.0)
                         house.childrenCareNeedSchedule[careSlot.day][careSlot.hour] = 0
@@ -2997,6 +3155,22 @@ class Sim:
                             maxIncomeForCare = max(maxIncomeForCare-careSupplier.wage, 0.0)
                             careSupplier.availableWorkingHours -= 1
                             careSupplier.freeWorkingHours -= 1
+                            careSupplier.childWork += 1
+                            
+                            # Debugging variables
+                            oowInformalChildCare += 1
+                            ooiChildCare += 1
+                            
+                            ####    Debuggging code   ##############################################
+                            if careSupplier.availableWorkingHours < 0:
+                                print 'Error: working hours cannot be negative!'
+                                print 'Check no. 4'
+                                print 'Working hours: ' + str(careSupplier.availableWorkingHours)
+                                print 'Available hours: ' + str(careSupplier.freeWorkingHours)
+                                sys.exit()
+                            ###########################################################################
+                            
+                            
                             house.shiftTable[careSlot.day][careSlot.hour] = supplier
                             for agent in careSlot.receivers:
                                 agent.unmetWeeklyNeeds[careSlot.day][careSlot.hour] = 0
@@ -3036,6 +3210,9 @@ class Sim:
                             house.costFormalCare += additionalCost
                             house.costFormalChildCare += additionalCost
                             
+                            # Debugging variables
+                            ooiChildCare += 1
+                            
                             # Degugging code
 #                                if house not in self.householdsWithFormalChildCare and self.periodFormalCare == False:
 #                                    self.householdsWithFormalChildCare.append(house)
@@ -3064,6 +3241,23 @@ class Sim:
                         careSupplier.socialWork += 1
                         careSupplier.availableWorkingHours -= 1
                         careSupplier.freeWorkingHours -= 1
+                        
+                        # Debugging variables
+                        oowInformalSocialCare += 1
+                        ooiSocialCare += 1
+                        
+                        
+                        ####    Debuggging code   ##############################################
+                        if careSupplier.availableWorkingHours < 0:
+                            print 'Error: working hours cannot be negative!'
+                            print 'Check no. 5'
+                            print 'Working hours: ' + str(careSupplier.availableWorkingHours)
+                            print 'Available hours: ' + str(careSupplier.freeWorkingHours)
+                            sys.exit()
+                        ###########################################################################
+                        
+                        
+                        
                         careSupplier.outOfWorkSocialCare += 1
                         house.shiftTable[careSlot.day][careSlot.hour] = supplier
                         # Update receiver's state
@@ -3121,6 +3315,10 @@ class Sim:
                         house.costFormalSocialCare += additionalCost
                         house.totalUnmetSocialCareNeed -= 1
                         
+                        # Debugging variables
+                        ooiSocialCare += 1
+                        
+                        
                         # Degugging code
 #                            if house not in self.householdsWithFormalChildCare and self.periodFormalCare == False:
 #                                self.householdsWithFormalChildCare.append(house)
@@ -3177,6 +3375,12 @@ class Sim:
 #                house.careSlots = [x for x in slots_WNH if sum([y.privateChildCareNeed_WNH for y in x.receivers])> 0] + [x for x in slots_ONH if sum([y.privateChildCareNeed_ONH for y in x.receivers])> 0]
             end = time.time()
             CareProvision7_extim += (end - start) 
+        
+        # Debugging output 
+        if ooiChildCare > 0:
+            print 'OOW child care as a share of OOI child care: ' + str(float(oowInformalChildCare)/float(ooiChildCare))
+        if ooiSocialCare > 0:
+            print 'OOW social care as a share of OOI social care: ' + str(float(oowInformalSocialCare)/float(ooiSocialCare))
             
         # Allocate public care
         # Satisfy residual care needs of agents with the public child/social care owed to them.
@@ -6627,11 +6831,13 @@ class Sim:
                 person.outOfWorkSocialCare = 0
                 person.residualWorkingHours = 0
                 person.availableWorkingHours = 0
+                person.freeWorkingHours = 0
                 person.residualInformalSupplies = [0.0, 0.0, 0.0, 0.0]
                 person.residualInformalSupply = 0
                 person.hoursInformalSupplies = [0.0, 0.0, 0.0, 0.0]
                 person.maxFormalCareSupply = 0
                 person.totalSupply = 0
+                person.parentSupply = 0
                 person.informalSupplyByKinship = [0.0, 0.0, 0.0, 0.0]
                 person.formalSupplyByKinship = [0.0, 0.0, 0.0, 0.0]
                 person.careForFamily = False
@@ -7415,6 +7621,8 @@ class Sim:
                 house.totalUnmetChildCareNeed += child.unmetChildCareNeed
             self.totalChildCareNeed += house.totalUnmetChildCareNeed
             # income = sum([x.income for x in household])
+            ## The amount of public care the child is entitled, is taken out the total care need, in order to get the net value of 
+            ## child care need which needs to be provided through informal and formal care
             if house.gettingBenefits == True:
                 firstGroup = [x for x in children if x.age < 2]
                 for child in firstGroup:
@@ -7584,7 +7792,13 @@ class Sim:
             household = [x for x in house.occupants]
             householdCarers = [x for x in household if x.age >= self.p['ageTeenagers'] and x.careNeedLevel < 2 and x.maternityStatus == False]
            
+            parents = [x.father for x in house.childCareRecipients]+[x.mother for x in house.childCareRecipients]
+            parents = [x for x in parents if x in household]
+            for parent in parents:
+                parent.parentSupply = self.p['parentsMaxSupply']
+            
             for member in householdCarers:
+
                 member.freeWorkingHours = 0
                 if member.status == 'teenager':
                     member.potentialCarer = True
@@ -7757,8 +7971,11 @@ class Sim:
                 for agent in householdCarers:
                     kinSupply += agent.residualWeeklySupplies[i]
                 house.householdInformalSupplies.append(kinSupply)
-        
-            employed = [x for x in householdCarers if x.status == 'worker' and x.maternityStatus == False and x.careNeedLevel < 2]
+                
+            # Temporarily commented out to debug
+            # employed = [x for x in householdCarers if x.status == 'worker' and x.maternityStatus == False and x.careNeedLevel < self.p['numCareLevels']]
+            employed = [x for x in house.occupants if x.status == 'worker' and x.maternityStatus == False and x.careNeedLevel < self.p['numCareLevels']]
+            
             for worker in employed:
                 worker.workingHours = self.p['weeklyHours'][worker.careNeedLevel]
                 worker.availableWorkingHours = worker.workingHours
@@ -7769,13 +7986,8 @@ class Sim:
             potentialIncomesFromWork = [x.potentialIncome for x in employed]
             potentialIncomesFromWelfare = [x.pension for x in household if x.status == 'retired']
             potentialIncome = sum(potentialIncomesFromWork+potentialIncomesFromWelfare)
-            agentsInMaternityLeave = [x for x in household if x.maternityStatus == False]
-            maternityIncomes = []
-            for person in agentsInMaternityLeave:
-                maternityIncome = self.p['maternityLeaveIncomeReduction']*person.previousIncome
-                if person.monthsSinceBirth > 2:
-                    maternityIncome = min(self.p['minStatutoryMaternityPay'], maternityIncome)
-                    maternityIncomes.append(maternityIncome)
+            agentsInMaternityLeave = [x for x in household if x.maternityStatus == True]
+            maternityIncomes = [x.income for x in agentsInMaternityLeave]
             potentialIncomesFromWelfare.extend([x.benefits for x in household])
             potentialIncomes = potentialIncomesFromWork + potentialIncomesFromWelfare + maternityIncomes
             house.potentialIncomeFromWork = sum(potentialIncomesFromWork)
@@ -8099,69 +8311,93 @@ class Sim:
     def doAgeTransitions(self, policyFolder, month):
         
         for person in self.pop.livingPeople:
-            if person.birthMonth == month:
-                person.age += 1
-            person.movedThisYear = False
-            # Change this....
-            person.yearInTown += 1
+            
             if person.maternityStatus == True:
                 person.monthsSinceBirth += 1
             if person.monthsSinceBirth == self.p['maternityLeaveDuration']:
                 person.maternityStatus = False
                 person.monthsSinceBirth = 0
+                
+            if person.birthMonth == month:
+                person.age += 1
+                person.movedThisYear = False
+                person.yearInTown += 1
+            
         """Check whether people have moved on to a new status in life."""
         peopleNotYetRetired = [x for x in self.pop.livingPeople if x.status != 'retired']
         for person in peopleNotYetRetired:
             ## Do transitions to adulthood and retirement
-            if person.age == self.p['ageTeenagers'] and person.status != 'teenager':
-                person.status = 'teenager'
-            if person.age == self.p['ageOfAdulthood'] and person.status != 'student':
-                person.status = 'student'
-                person.classRank = 0 # max(person.father.classRank, person.mother.classRank)
-                if np.random.random() < self.p['probOutOfTownStudent']:
-                    person.outOfTownStudent = True
-                if person.house == self.displayHouse:
-                    messageString = str(self.year) + ": #" + str(person.id) + " is now an adult."
-                    self.textUpdateList.append(messageString)
-                        
-                    with open(os.path.join(policyFolder, "Log.csv"), "a") as file:
-                        writer = csv.writer(file, delimiter = ",", lineterminator='\r')
-                        writer.writerow([self.year, messageString])
-                        
-                        
-            elif person.age == self.p['ageOfRetirement'] and person.status != 'retired':
-                person.status = 'retired'
-                person.jobSchedule = [[0]*24, [0]*24, [0]*24, [0]*24, [0]*24, [0]*24, [0]*24]
-                person.wage = 0
-                shareWorkingTime = person.workingPeriods/float(self.p['minContributionPeriods'])
-                dK = np.random.normal(0, self.p['wageVar'])
-                person.pension = person.lastIncome*shareWorkingTime*math.exp(dK)
-                if person.house == self.displayHouse:
-                    messageString = str(self.year) + ": #" + str(person.id) + " has now retired."
-                    self.textUpdateList.append(messageString)
-                        
-                    with open(os.path.join(policyFolder, "Log.csv"), "a") as file:
-                        writer = csv.writer(file, delimiter = ",", lineterminator='\r')
-                        writer.writerow([self.year, messageString])
+            if person.birthMonth == month:
+                if person.age == self.p['ageTeenagers']:
+                    person.status = 'teenager'
+                if person.age == self.p['ageOfAdulthood']:
+                    person.status = 'student'
+                    person.classRank = 0 # max(person.father.classRank, person.mother.classRank)
+                    if np.random.random() < self.p['probOutOfTownStudent']:
+                        person.outOfTownStudent = True
+                    if person.house == self.displayHouse:
+                        messageString = str(self.year) + ": #" + str(person.id) + " is now an adult."
+                        self.textUpdateList.append(messageString)
+                            
+                        with open(os.path.join(policyFolder, "Log.csv"), "a") as file:
+                            writer = csv.writer(file, delimiter = ",", lineterminator='\r')
+                            writer.writerow([self.year, messageString])
+        
+                elif person.age == self.p['ageOfRetirement']:
+                    person.status = 'retired'
+                    person.jobSchedule = [[0]*24, [0]*24, [0]*24, [0]*24, [0]*24, [0]*24, [0]*24]
+                    person.wage = 0
+                    shareWorkingTime = person.workingPeriods/float(self.p['minContributionPeriods'])
+                    dK = np.random.normal(0, self.p['wageVar'])
+                    person.pension = person.lastIncome*shareWorkingTime*math.exp(dK)
+                    if person.house == self.displayHouse:
+                        messageString = str(self.year) + ": #" + str(person.id) + " has now retired."
+                        self.textUpdateList.append(messageString)
+                            
+                        with open(os.path.join(policyFolder, "Log.csv"), "a") as file:
+                            writer = csv.writer(file, delimiter = ",", lineterminator='\r')
+                            writer.writerow([self.year, messageString])
                     
     def startWorking(self, person):
         
         person.status = 'unemployed'
+        person.newEntrant = True
+        person.workingHours = 0
+        person.income = 0
+        person.jobTenure = 0
+        person.monthHired = 0
+        person.jobShift = None
+        person.jobSchedule = [[0]*24, [0]*24, [0]*24, [0]*24, [0]*24, [0]*24, [0]*24]
         person.outOfTownStudent = False
         
         dKi = np.random.normal(0, self.p['wageVar'])
         person.initialIncome = self.p['incomeInitialLevels'][person.classRank]*math.exp(dKi)
-        dKf = np.random.normal(dKi, self.p['wageVar'])
-        person.finalIncome = self.p['incomeFinalLevels'][person.classRank]*math.exp(dKf)
         
+        if person.classRank == 0:
+            person.finalIncome = np.random.lognormal(2.5, 0.25)
+        if person.classRank == 1:
+            person.finalIncome = np.random.lognormal(2.8, 0.3)
+        if person.classRank == 2:
+            person.finalIncome = np.random.lognormal(3.2, 0.35)
+        if person.classRank == 3:
+            person.finalIncome = np.random.lognormal(3.7, 0.4)
+        if person.classRank == 4:
+            person.finalIncome = np.random.lognormal(4.5, 0.5)
+#        if person.classRank < 4:
+#            dKf = np.random.normal(dKi, self.p['wageVar'])
+#            person.finalIncome = self.p['incomeFinalLevels'][person.classRank]*math.exp(dKf)
+#        else:
+#            sigma = float(self.p['incomeFinalLevels'][person.classRank])/5.0
+            # person.finalIncome = np.random.lognormal(self.p['incomeFinalLevels'][person.classRank], sigma)
+            
 #        person.wage = person.initialIncome
 #        person.income = person.wage*self.p['weeklyHours'][int(person.careNeedLevel)]
 #        person.potentialIncome = person.income
     
     def doSocialTransition(self, policyFolder, month):
-        
-        if month == 1:
-            for person in self.pop.livingPeople:
+        newWorkforce = []
+        for person in self.pop.livingPeople:
+            if person.birthMonth == month:
                 if person.age == self.p['workingAge'][person.classRank] and person.status == 'student':
                 # With a certain probability p the person enters the workforce, 
                 # with a probability 1-p goes to the next educational level
@@ -8172,6 +8408,7 @@ class Sim:
                     
                     if np.random.random() > probStudy:
                         self.startWorking(person)
+                        newWorkforce.append(person)
                         if person.house == self.displayHouse:
                             messageString = str(self.year) + ": #" + str(person.id) + " is now looking for a job."
                             self.textUpdateList.append(messageString)
@@ -8189,13 +8426,15 @@ class Sim:
                             with open(os.path.join(policyFolder, "Log.csv"), "a") as file:
                                 writer = csv.writer(file, delimiter = ",", lineterminator='\r')
                                 writer.writerow([self.year, messageString])
-                        
+
             
-    def transitionProb (self, person):
+    def transitionProb(self, person):
         household = [x for x in person.house.occupants]
         if person.father.dead + person.mother.dead != 2:
             disposableIncome = sum([x.income for x in household])
-            perCapitaDisposableIncome = disposableIncome/len(household)
+            
+            
+            perCapitaDisposableIncome = person.house.disposableIncomePerCapita # disposableIncome/len(household)
             # print('Per Capita Disposable Income: ' + str(perCapitaDisposableIncome))
             
             if perCapitaDisposableIncome > 0.0:
@@ -8213,13 +8452,24 @@ class Sim:
                 
                 incomeEffect = (self.p['costantIncomeParam']+1)/(math.exp(self.p['eduWageSensitivity']*relCost) + self.p['costantIncomeParam']) # Min-Max: 0 - 10
                 
+                # Debugging code
+                
+                # incomeEffect = 1.0
+                
+                
+                
+                
+                # Alternative income factor
+                # incomeEffect = (1.0-np.exp(-1*self.p['incomeTransitionBeta']*perCapitaDisposableIncome))
+                
+                
                 targetEL = max(person.father.classRank, person.mother.classRank)
                 
                 dE = float(targetEL - person.classRank)
                 expEdu = math.exp(self.p['eduRankSensitivity']*dE)
                 educationEffect = expEdu/(expEdu+self.p['costantEduParam'])
                 
-                careEffect = 1/math.exp(self.p['careEducationParam']*(person.socialWork+person.childWork))
+                careEffect = 1.0/math.exp(self.p['careEducationParam']*(person.socialWork+person.childWork))
                 
                 
                 ### Fixing probability to keep studying   ######################
@@ -8272,6 +8522,7 @@ class Sim:
             if month == -1:
                 month = np.random.choice([x+1 for x in range(12)])
             person.status = 'worker'
+            person.newEntrant = False
             person.unemploymentMonths = 0
             person.monthHired = month
             person.wage = self.computeWage(person)
@@ -8301,6 +8552,48 @@ class Sim:
             for hour in shiftHours:
                 weeklySchedule[day-1][hour] = 1
         return weeklySchedule
+    
+    def assignUnemploymentDuration(self, newEntrants):
+        unemployed = list(newEntrants)
+        men = [x for x in unemployed if x.sex == 'male']
+        numMen = len(men)
+        women = [x for x in unemployed if x.sex == 'female']
+        numWomen = len(women)
+        for i in ['male', 'female']:
+            if i == 'male':
+                durationShares = self.p['maleUDS']
+                unemployed = list(men)
+                totUnemployed = numMen
+            else:
+                durationShares = self.p['femaleUDS']
+                unemployed = list(women)
+                totUnemployed = numWomen
+            durationIndex = 1
+            for durationShare in durationShares:
+                numUnemployed = min(int(float(totUnemployed)*durationShare), len(unemployed))
+                if numUnemployed > 0:
+                    weights = [1.0/np.exp(self.p['unemploymentBeta']*x.unemploymentIndex) for x in unemployed]
+                    probs = [x/sum(weights) for x in weights]
+                    assignedUnemployed = np.random.choice(unemployed, numUnemployed, p = probs)
+                    for person in assignedUnemployed:
+                        if durationIndex < 7:
+                            person.unemploymentDuration = durationIndex
+                        else:
+                            if durationIndex == 7:
+                                person.unemploymentDuration = np.random.choice(range(7,10))
+                            elif durationIndex == 8:
+                                person.unemploymentDuration = np.random.choice(range(10,13))
+                            elif durationIndex == 9:
+                                person.unemploymentDuration = np.random.choice(range(13,19))
+                            elif durationIndex == 10:
+                                person.unemploymentDuration = np.random.choice(range(19,25))
+                    durationIndex += 1
+                    unemployed = [x for x in unemployed if x not in assignedUnemployed]
+                else:
+                    break
+            if len(unemployed) > 0:
+                for person in unemployed:
+                    person.unemploymentDuration = 25
         
     def dismissWorkers(self, newUnemployed):
         for person in newUnemployed:
@@ -8358,19 +8651,35 @@ class Sim:
     def computeIncome(self, month):
         # Compute income from work based on last period job market and informal care
         for person in self.pop.livingPeople:
-            if month == 1:
-                person.yearlyIncome = 0
-                person.yearlyDisposableIncome = 0
-                person.yearlyBenefits = 0
             if person.status == 'worker':
-                person.income = person.wage*person.availableWorkingHours
-                person.lastIncome = person.income
+                if person.maternityStatus == True:
+                    maternityIncome = person.income
+                    if person.monthsSinceBirth == 0:
+                        person.wage = 0
+                        maternityIncome = self.p['maternityLeaveIncomeReduction']*person.income
+                    elif person.monthsSinceBirth > 2:
+                        maternityIncome = min(self.p['minStatutoryMaternityPay'], maternityIncome)
+                    person.income = maternityIncome
+                else:
+                    person.income = person.wage*person.availableWorkingHours
+                    person.lastIncome = person.wage*self.p['weeklyHours'][person.careNeedLevel]
                 # Detract taxes and 
             elif person.status == 'retired':
                 person.income = person.pension
+            
             else:
                 person.income = 0
-            person.yearlyIncome += (person.income*52.0)/12
+            
+            person.yearlyIncomes.append(person.income*4.35)
+            if len(person.yearlyIncomes) > 12:
+                person.yearlyIncomes.pop(0)
+            person.yearlyIncome = sum(person.yearlyIncomes)
+            
+            if person.yearlyIncome < 0:
+                print 'Error: negative income!'
+                print 'Person yearly income: ' + str(person.yearlyIncome)
+                sys.exit()
+                
             person.disposableIncome = person.income
 
         # Compute income quintiles original income
@@ -8392,15 +8701,15 @@ class Sim:
                 j.incomeQuintile = i
             households = [x for x in households if x not in quintile]
         
-        if month == 12:
-            independentAgents = [x for x in self.pop.livingPeople if x.independentStatus == True]
-            independentAgents.sort(key=operator.attrgetter("yearlyIncome"))
-            for i in range(5):
-                number = int(round(len(independentAgents)/(5.0-float(i))))
-                quintile = independentAgents[:number]
-                for j in quintile:
-                    j.incomeQuintile = i
-                independentAgents = [x for x in independentAgents if x not in quintile]
+        # if month == 12:
+        independentAgents = [x for x in self.pop.livingPeople if x.independentStatus == True]
+        independentAgents.sort(key=operator.attrgetter("yearlyIncome"))
+        for i in range(5):
+            number = int(round(len(independentAgents)/(5.0-float(i))))
+            quintile = independentAgents[:number]
+            for j in quintile:
+                j.incomeQuintile = i
+            independentAgents = [x for x in independentAgents if x not in quintile]
 
         # Now, compute disposable income (i..e after taxes and benefits)
         # First, reduce by tax
@@ -8436,16 +8745,19 @@ class Sim:
         # ...then add benefits
         for person in self.pop.livingPeople:
             person.disposableIncome += person.benefits
-            person.yearlyBenefits += (person.benefits*52.0)/12
-            person.yearlyDisposableIncome += (person.disposableIncome*52.0)/12
+            person.yearlyBenefits = person.benefits*52.0
+            person.yearlyDisposableIncomes.append(person.disposableIncome*4.35)
+            if len(person.yearlyDisposableIncomes) > 12:
+                person.yearlyDisposableIncomes.pop(0)
+            person.yearlyDisposableIncome = sum(person.yearlyDisposableIncomes)
             person.cumulativeIncome += person.disposableIncome
                 # person.cumulativeIncome = max(person.cumulativeIncome, 0)
         # Compute income quintiles disposable income
         for house in self.map.occupiedHouses:
             house.householdDisposableIncome = sum([x.disposableIncome for x in house.occupants])
             house.benefits = sum([x.benefits for x in house.occupants])
-            house.yearlyDisposableIncome += (house.householdDisposableIncome*52.0)/12
-            house.yearlyBenefits += (house.benefits*52.0)/12
+            house.yearlyDisposableIncome = house.householdDisposableIncome*52.0
+            house.yearlyBenefits = house.benefits*52.0
             house.disposableIncomePerCapita = house.householdIncome/float(len(house.occupants))
         households = [x for x in self.map.occupiedHouses]
         households.sort(key=operator.attrgetter("yearlyDisposableIncome"))
@@ -8457,14 +8769,14 @@ class Sim:
             households = [x for x in households if x not in quintile]
             
         independentAgents = [x for x in self.pop.livingPeople if x.independentStatus == True]
-        if month == 12:
-            independentAgents.sort(key=operator.attrgetter("yearlyDisposableIncome"))
-            for i in range(5):
-                number = int(round(len(independentAgents)/(5.0-float(i))))
-                quintile = independentAgents[:number]
-                for j in quintile:
-                    j.disposableIncomeQuintile = i
-                independentAgents = [x for x in independentAgents if x not in quintile]
+        # if month == 12:
+        independentAgents.sort(key=operator.attrgetter("yearlyDisposableIncome"))
+        for i in range(5):
+            number = int(round(len(independentAgents)/(5.0-float(i))))
+            quintile = independentAgents[:number]
+            for j in quintile:
+                j.disposableIncomeQuintile = i
+            independentAgents = [x for x in independentAgents if x not in quintile]
         
         # Then, from the household income subtract the cost of formal child and social care
         for house in self.map.occupiedHouses:
@@ -8578,7 +8890,7 @@ class Sim:
     def jobMarket(self, year, month):
         self.hiredPeople = []
         self.newUnemployed = []
-        activePop = [x for x in self.pop.livingPeople if (x.status == 'worker' or x.status == 'unemployed') and x.careNeedLevel < 2 and x.maternityStatus == False]
+        activePop = [x for x in self.pop.livingPeople if (x.status == 'worker' or x.status == 'unemployed') and x.careNeedLevel < self.p['numCareLevels'] and x.maternityStatus == False]
         
         unemployedNotInActive = [x for x in self.pop.livingPeople if x not in activePop and x.status == 'unemployed']
         
@@ -8598,21 +8910,8 @@ class Sim:
                 person.workingPeriods += float(person.availableWorkingHours)/float(person.workingHours)
             person.workExperience += float(person.availableWorkingHours)/self.p['weeklyHours'][0]
             person.wage = self.computeWage(person)
-            
-        
-        unemployed = [x for x in activePop if x.status == 'unemployed']
-        for person in unemployed:
-            person.unemploymentMonths += 1
-            person.unemploymentDuration -= 1
-        
-        longTermUnemployed = [x for x in unemployed if x.unemploymentMonths >= 12]
-        longTermUnemploymentRate = float(len(longTermUnemployed))/float(len(activePop))
-        print 'Long-term unemployment rate: ' + str(longTermUnemploymentRate)
         
         unemploymentRate = self.unemployment_series[int(self.year-self.p['startYear'])]
-        
-        print 'Unemployment rate: ' + str(unemploymentRate)
-        
         classShares = []
         for c in range(int(self.p['numberClasses'])):
             classPop = [x for x in activePop if x.classRank == c]
@@ -8627,12 +8926,37 @@ class Sim:
                     ageBandShares.append(float(len(agePop))/float(len(classPop)))
                 else:
                     ageBandShares.append(0)
+        
+        for person in activePop:
+            person.unemploymentIndex = self.computeUR(unemploymentRate, classShares, ageBandShares, self.p['unemploymentClassBias'], self.p['unemploymentAgeBias'], person.classRank, self.ageBand(person.age))
+        
+        unemployed = [x for x in activePop if x.status == 'unemployed']
+        newEntrants = [x for x in unemployed if x.newEntrant == True]
+        if len(newEntrants) > 0:
+            self.assignUnemploymentDuration(newEntrants)
+        for person in unemployed:
+            person.unemploymentMonths += 1
+            person.unemploymentDuration -= 1
+        
+        longTermUnemployed = [x for x in unemployed if x.unemploymentMonths >= 12]
+        longTermUnemploymentRate = float(len(longTermUnemployed))/float(len(activePop))
+        print 'Long-term unemployment rate: ' + str(longTermUnemploymentRate)
+        
+        
+        
+        print 'Unemployment rate: ' + str(unemploymentRate)
+        
+        
+        
+        
                     
+        for c in range(int(self.p['numberClasses'])):
             for b in range(int(self.p['numberAgeBands'])):
                 agePop = [x for x in activePop if x.classRank == c and self.ageBand(x.age) == b]
                 if len(agePop) > 0:
                     ageSES_ur = self.computeUR(unemploymentRate, classShares, ageBandShares, self.p['unemploymentClassBias'], self.p['unemploymentAgeBias'], c, b)
                     workPop = [x for x in workingPop if x.classRank == c and self.ageBand(x.age) == b]
+                    
                     if len(workPop) > 0:
                         # Age and SES-specific unemployment rate 
                         layOffsRate = self.p['meanLayOffsRate']*ageSES_ur/unemploymentRate
@@ -8643,9 +8967,7 @@ class Sim:
                             probs = [x/sum(weights) for x in weights]
                             firedWorkers = np.random.choice(dismissableWorkers, numLayOffs, replace = False, p = probs)
                             self.dismissWorkers(firedWorkers)
-                            # self.newUnemployed.extend(firedWorkers)
-                            for person in firedWorkers:
-                                person.unemploymentIndex = ageSES_ur
+                                
                     
                     # agePop = [x for x in activePop if x.classRank == c and self.ageBand(x.age) == b]
                     empiricalUnemployed = int(float(len(agePop))*ageSES_ur)
@@ -8824,6 +9146,7 @@ class Sim:
             agent.benefits = 0
             agent.highestDisabilityBenefits = False
             agent.ucBenefits = False
+        
         
         
         self.childBenefits()
@@ -9400,8 +9723,9 @@ class Sim:
                 woman.residualWeeklySupplies = [x for x in woman.maxWeeklySupplies]
                 woman.residualWorkingHours = 0
                 woman.availableWorkingHours = 0
+                woman.freeWorkingHours = 0
                 woman.potentialIncome = 0
-                woman.income = 0
+                # woman.income = 0
                 if woman.house == self.displayHouse:
                     messageString = str(self.year) + ": #" + str(woman.id) + " had a baby, #" + str(baby.id) + "." 
                     self.textUpdateList.append(messageString)
@@ -10349,10 +10673,13 @@ class Sim:
         householdsTotalIncome = sum([x.totalPotentialIncome for x in self.map.occupiedHouses])
         householdsTotalChildCareCost = sum([x.costFormalChildCare for x in self.map.occupiedHouses])
         totalDisposableIncome = sum([x.householdDisposableIncome for x in self.map.occupiedHouses])
+        medianFormalChildCare = np.median([x.costFormalChildCare for x in self.map.occupiedHouses])
+        medianDisposableIncome = np.median([x.householdDisposableIncome for x in self.map.occupiedHouses])
         
         childcareIncomeShare = 0
         if totalDisposableIncome > 0:
             childcareIncomeShare = householdsTotalChildCareCost/totalDisposableIncome
+            medianChildCareIncomeShare = medianFormalChildCare/medianDisposableIncome
       
         children = [x for x in self.pop.livingPeople if x.age < self.p['ageTeenagers']]
         totalChildCareNeed = sum([x.netChildCareDemand for x in children])
@@ -10453,11 +10780,176 @@ class Sim:
         dispIQ5 = np.median([x.householdDisposableIncome for x in self.map.occupiedHouses if x.disposableIncomeQuintile == 4])
         
         independentAgents = [x for x in self.pop.livingPeople if x.independentStatus == True]
-        indIQ1 = np.median([x.yearlyDisposableIncome for x in independentAgents if x.disposableIncomeQuintile == 0])
-        indIQ2 = np.median([x.yearlyDisposableIncome for x in independentAgents if x.disposableIncomeQuintile == 1])
-        indIQ3 = np.median([x.yearlyDisposableIncome for x in independentAgents if x.disposableIncomeQuintile == 2])
-        indIQ4 = np.median([x.yearlyDisposableIncome for x in independentAgents if x.disposableIncomeQuintile == 3])
-        indIQ5 = np.median([x.yearlyDisposableIncome for x in independentAgents if x.disposableIncomeQuintile == 4])
+        indIQ1_D = np.median([x.yearlyDisposableIncome for x in independentAgents if x.disposableIncomeQuintile == 0])
+        indIQ2_D = np.median([x.yearlyDisposableIncome for x in independentAgents if x.disposableIncomeQuintile == 1])
+        indIQ3_D = np.median([x.yearlyDisposableIncome for x in independentAgents if x.disposableIncomeQuintile == 2])
+        indIQ4_D = np.median([x.yearlyDisposableIncome for x in independentAgents if x.disposableIncomeQuintile == 3])
+        indIQ5_D = np.median([x.yearlyDisposableIncome for x in independentAgents if x.disposableIncomeQuintile == 4])
+        
+        indIQ1_D_M = np.mean([x.yearlyDisposableIncome for x in independentAgents if x.disposableIncomeQuintile == 0])
+        indIQ2_D_M = np.mean([x.yearlyDisposableIncome for x in independentAgents if x.disposableIncomeQuintile == 1])
+        indIQ3_D_M = np.mean([x.yearlyDisposableIncome for x in independentAgents if x.disposableIncomeQuintile == 2])
+        indIQ4_D_M = np.mean([x.yearlyDisposableIncome for x in independentAgents if x.disposableIncomeQuintile == 3])
+        indIQ5_D_M = np.mean([x.yearlyDisposableIncome for x in independentAgents if x.disposableIncomeQuintile == 4])
+        
+        indIQ1_G = np.median([x.yearlyIncome for x in independentAgents if x.incomeQuintile == 0])
+        indIQ2_G = np.median([x.yearlyIncome for x in independentAgents if x.incomeQuintile == 1])
+        indIQ3_G = np.median([x.yearlyIncome for x in independentAgents if x.incomeQuintile == 2])
+        indIQ4_G = np.median([x.yearlyIncome for x in independentAgents if x.incomeQuintile == 3])
+        indIQ5_G = np.median([x.yearlyIncome for x in independentAgents if x.incomeQuintile == 4])
+        
+        indIQ1_G_M = np.mean([x.yearlyIncome for x in independentAgents if x.incomeQuintile == 0])
+        indIQ2_G_M = np.mean([x.yearlyIncome for x in independentAgents if x.incomeQuintile == 1])
+        indIQ3_G_M = np.mean([x.yearlyIncome for x in independentAgents if x.incomeQuintile == 2])
+        indIQ4_G_M = np.mean([x.yearlyIncome for x in independentAgents if x.incomeQuintile == 3])
+        indIQ5_G_M = np.mean([x.yearlyIncome for x in independentAgents if x.incomeQuintile == 4])
+        
+        # Create set of agents in the first quintile.
+        zeroGI_Pop = [x for x in independentAgents if x.incomeQuintile == 0]
+        zgi_income = [x.yearlyIncome for x in zeroGI_Pop]
+        
+        zeroIncomeGI_Pop = [x for x in zeroGI_Pop if x.yearlyIncome == 0]
+        zeroIncomeGI_Pop_W = [x for x in zeroIncomeGI_Pop if x.status == 'worker']
+        zeroIncomeGI_Pop_R = [x for x in zeroIncomeGI_Pop if x.status == 'retired']
+        
+        
+        print 'Number agents in first quintile: ' + str(len(zeroGI_Pop))
+        print 'Number agents with zero income: ' + str(len(zeroIncomeGI_Pop))
+        print 'Number of workers with zero income: ' + str(len(zeroIncomeGI_Pop_W))
+        print 'Number of retired with zero income: ' + str(len(zeroIncomeGI_Pop_R))
+        
+        print 'ZGI mean income: ' + str(np.mean(zgi_income))
+        print 'ZGI median income: ' + str(np.median(zgi_income))
+        
+        zgi_status = [x.status for x in zeroGI_Pop]
+        zgi_child = [x for x in zgi_status if x == 'child']
+        zgi_ta = [x for x in zgi_status if x == 'teenager']
+        zgi_student = [x for x in zgi_status if x == 'student']
+        zgi_worker = [x for x in zgi_status if x == 'worker']
+        zgi_unemployed = [x for x in zgi_status if x == 'unemployed']
+        zgi_retired = [x for x in zgi_status if x == 'retired']
+        numStatus = [len(zgi_child), len(zgi_ta), len(zgi_student), len(zgi_worker), len(zgi_unemployed), len(zgi_retired)]
+        
+        # Focus on student, unemployed and retired
+        zgi_student = [x for x in zeroGI_Pop if x.status == 'student']
+        zgi_worker = [x for x in zeroGI_Pop if x.status == 'worker']
+        zgi_retired = [x for x in zeroGI_Pop if x.status == 'retired']
+        
+        ageStudent = [float(x.age) for x in zgi_student]
+        print 'Mean age students: ' + str(np.mean(ageStudent))
+        benefitStudent = [x.benefits for x in zgi_student]
+        print 'Mean benefits students: ' + str(np.mean(benefitStudent))
+        studentsWithPartner = len([x for x in zgi_student if x.partner != None])
+        if len(zgi_student) > 0:
+            print 'Share of married students: ' + str(float(studentsWithPartner)/float(len(zgi_student)))
+        careNeedLevelZIS = [x.careNeedLevel for x in zgi_student]
+        zgis_cnl = []
+        for i in range(5):
+            zgis_cnl.append(len([x for x in careNeedLevelZIS if x == i]))
+        print 'ZIS by care need level: ' + str(zgis_cnl)
+        
+        zeroAWH = [x for x in self.pop.livingPeople if x.status == 'worker' and x.availableWorkingHours == 0]
+        print 'Zero available working hours workers (post): ' + str(len(zeroAWH))
+        zeroWH = [x for x in self.pop.livingPeople if x.status == 'worker' and x.workingHours == 0]
+        print 'Zero working hours workers (post): ' + str(len(zeroWH))
+        
+        availableWorkingHoursZIW = [float(x.availableWorkingHours) for x in zgi_worker]
+        print 'Mean available working hours: ' + str(np.mean(availableWorkingHoursZIW))
+        print 'Median available working hours: ' + str(np.median(availableWorkingHoursZIW))
+        workingHoursZIW = [float(x.workingHours) for x in zgi_worker]
+        print 'Mean available working hours workers: ' + str(np.mean(workingHoursZIW))
+        print 'Median available working hours workers: ' + str(np.median(workingHoursZIW))
+        careNeedLevelZIW = [x.careNeedLevel for x in zgi_worker]
+        zgiw_cnl = []
+        for i in range(5):
+            zgiw_cnl.append(len([x for x in careNeedLevelZIW if x == i]))
+        print 'ZIW by care need level: ' + str(zgiw_cnl)
+        
+        pensions = [x.pension for x in zgi_retired]
+        if len(pensions) > 0:
+            print 'Retired pensions: ' + str(np.mean(pensions))
+            lastIncomeRetired = [x.lastIncome for x in zgi_retired]
+            print 'Retired last income: ' + str(np.mean(lastIncomeRetired))
+            workingHoursZIR = [float(x.workingHours) for x in zgi_retired]
+            print 'Mean available working hours retired: ' + str(np.mean(workingHoursZIR))
+            workingPeriodsRetired = [x.workingPeriods for x in zgi_retired]
+            print 'Retired working periods: ' + str(np.mean(workingPeriodsRetired))
+        careNeedLevelZIR = [x.careNeedLevel for x in zgi_retired]
+        zgir_cnl = []
+        for i in range(5):
+            zgir_cnl.append(len([x for x in careNeedLevelZIR if x == i]))
+        print 'ZIR by care need level: ' + str(zgir_cnl)
+        
+        
+        print 'Zero gross incomes by status: ' + str(numStatus)
+        
+        zgi_careNeedLevels = [x.careNeedLevel for x in zeroGI_Pop]
+        zgi_cnl = []
+        for i in range(5):
+            zgi_cnl.append(len([x for x in zgi_careNeedLevels if x == i]))
+        print 'Zero gross incomes by care need level: ' + str(zgi_cnl)
+        
+        zgi_cumInc = [x.cumulativeIncome for x in zeroGI_Pop]
+        print 'Zero GI mean cumulative income: ' + str(np.mean(zgi_cumInc))
+        print 'Zero GI median cumulative income: ' + str(np.median(zgi_cumInc))
+        zgi_benefits = [x.benefits for x in zeroGI_Pop]
+        print 'Zero GI mean benefits: ' + str(np.mean(zgi_benefits))
+        print 'Zero GI median benefits: ' + str(np.median(zgi_benefits))
+        
+        zeroDI_Pop = [x for x in independentAgents if x.disposableIncomeQuintile == 0]
+        zdi_income = [x.yearlyDisposableIncome for x in zeroDI_Pop]
+        
+        print 'ZDI mean income: ' + str(np.mean(zdi_income))
+        print 'ZDI median income: ' + str(np.median(zdi_income))
+        
+        zdi_status = [x.status for x in zeroDI_Pop]
+        zdi_child = [x for x in zdi_status if x == 'child']
+        zdi_ta = [x for x in zdi_status if x == 'teenager']
+        zdi_student = [x for x in zdi_status if x == 'student']
+        zdi_worker = [x for x in zdi_status if x == 'worker']
+        zdi_unemployed = [x for x in zdi_status if x == 'unemployed']
+        zdi_retired = [x for x in zdi_status if x == 'retired']
+        numStatus = [len(zdi_child), len(zdi_ta), len(zdi_student), len(zdi_worker), len(zdi_unemployed), len(zdi_retired)]
+        print 'Zero disposable incomes by status: ' + str(numStatus)
+        
+        zdi_careNeedLevels = [x.careNeedLevel for x in zeroDI_Pop]
+        zdi_careNeedLevels = [x.careNeedLevel for x in zeroDI_Pop]
+        zdi_cnl = []
+        for i in range(5):
+            zdi_cnl.append(len([x for x in zdi_careNeedLevels if x == i]))
+        print 'Zero gross incomes by care need level: ' + str(zdi_cnl)
+        
+        zdi_cumInc = [x.cumulativeIncome for x in zeroDI_Pop]
+        print 'Zero DI mean cumulative income: ' + str(np.mean(zdi_cumInc))
+        print 'Zero DI median cumulative income: ' + str(np.median(zdi_cumInc))
+        
+        zdi_benefits = [x.benefits for x in zeroDI_Pop]
+        print 'Zero DI mean benefits: ' + str(np.mean(zdi_benefits))
+        print 'Zero DI median benefits: ' + str(np.median(zdi_benefits))
+        # print attributes of these agents
+        
+        
+        
+        disposableIncomeQuintiles = [indIQ1_D, indIQ2_D, indIQ3_D, indIQ4_D, indIQ5_D]
+        print 'Median disposable incomes by quintiles: ' + str(disposableIncomeQuintiles)
+        disposableIncomeQuintiles_M = [indIQ1_D_M, indIQ2_D_M, indIQ3_D_M, indIQ4_D_M, indIQ5_D_M]
+        print 'Mean disposable incomes by quintiles: ' + str(disposableIncomeQuintiles_M)
+        shares = [(a/b) for a, b, in zip(disposableIncomeQuintiles, self.p['disposableIncomes'])]
+        print 'Shares of empirical DI: ' + str(shares)
+        
+        incomeQuintiles = [indIQ1_G, indIQ2_G, indIQ3_G, indIQ4_G, indIQ5_G]
+        print 'Median incomes by quintiles: ' + str(incomeQuintiles)
+        incomeQuintiles_M = [indIQ1_G_M, indIQ2_G_M, indIQ3_G_M, indIQ4_G_M, indIQ5_G_M]
+        print 'Mean incomes by quintiles: ' + str(incomeQuintiles_M)
+        shares = [(a/b) for a, b, in zip(incomeQuintiles, self.p['grossIncomes'])]
+        print 'Shares of empirical GI: ' + str(shares)
+        
+        
+        print 'Disposable/Gross income difference: ' + str(self.p['deltaIncomes'])
+        deltaIncomes = [(a-b)/c for a, b, c in zip(disposableIncomeQuintiles, incomeQuintiles, self.p['deltaIncomes'])]
+        print 'Delta differences: ' + str(deltaIncomes)
+        
+        fitness = sum([(1.0-x)*(1.0-x) for x in shares])
         
         netIQ1 = np.median([x.householdNetIncome for x in self.map.occupiedHouses if x.netIncomeQuintile == 0])
         netIQ2 = np.median([x.householdNetIncome for x in self.map.occupiedHouses if x.netIncomeQuintile == 1])
@@ -10502,7 +10994,7 @@ class Sim:
                    self.costTaxFreeChildCare, self.totalTaxRevenue, self.totalPensionRevenue, self.pensionExpenditure, 
                    self.totalHospitalizationCost, self.socialClassShares[0], self.socialClassShares[1], self.socialClassShares[2], 
                    self.socialClassShares[3], self.socialClassShares[4], totalInformalChildCare, formalChildCare, totalUnmetChildCareNeed, 
-                   childcareIncomeShare, shareInformalChildCare, shareCareGivers, ratioFemaleMaleCarers, shareMaleCarers, shareFemaleCarers, ratioWage, 
+                   childcareIncomeShare, medianChildCareIncomeShare, shareInformalChildCare, shareCareGivers, ratioFemaleMaleCarers, shareMaleCarers, shareFemaleCarers, ratioWage, 
                    ratioIncome, shareFamilyCarer, share_over20Hours_FamilyCarers, numSocialCarers, averageHoursOfCare, share_40to64_carers, 
                    share_over65_carers, share_10PlusHours_over70, totalSocialCareNeed, totalInformalSocialCare, totalFormalSocialCare, 
                    totalUnmetSocialCareNeed, totalSocialCare, share_InformalSocialCare, share_UnmetSocialCareNeed, 
@@ -10513,7 +11005,8 @@ class Sim:
                    q4_socialCareNeed, q4_informalSocialCare, q4_formalSocialCare, q4_unmetSocialCareNeed, q4_outOfWorkSocialCare,
                    q5_socialCareNeed, q5_informalSocialCare, q5_formalSocialCare, q5_unmetSocialCareNeed, q5_outOfWorkSocialCare,
                    self.grossDomesticProduct, publicCareToGDP, self.onhUnmetChildcareNeed, self.medianChildCareNeedONH, self.totalHoursOffWork,
-                   indIQ1, indIQ2, indIQ3, indIQ4, indIQ5, origIQ1, origIQ2, origIQ3, origIQ4, origIQ5, dispIQ1, dispIQ2, dispIQ3, dispIQ4, dispIQ5,
+                   indIQ1_D, indIQ2_D, indIQ3_D, indIQ4_D, indIQ5_D, indIQ1_G, indIQ2_G, indIQ3_G, indIQ4_G, indIQ5_G,
+                   origIQ1, origIQ2, origIQ3, origIQ4, origIQ5, dispIQ1, dispIQ2, dispIQ3, dispIQ4, dispIQ5,
                    netIQ1, netIQ2, netIQ3, netIQ4, netIQ5, self.socialClassShares[0], self.socialClassShares[1], self.socialClassShares[2],
                    self.socialClassShares[3], self.socialClassShares[4], self.internalChildCare, self.internalSocialCare, self.externalChildCare, 
                    self.externalSocialCare, shareInternalCare, self.aggregateChildBenefits, self.aggregateDisabledChildrenBenefits,

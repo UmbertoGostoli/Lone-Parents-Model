@@ -33,7 +33,7 @@ def meta_params():
     m['verboseDebugging'] = False
     m['singleRunGraphs'] = False
     m['withBenefits'] = True
-    m['externalCare'] = True
+    
     m['careAllocationFromYear'] = m['startYear']
     m['favouriteSeed'] = int(time.time())
     m['loadFromFile'] = False
@@ -49,6 +49,11 @@ def meta_params():
     m['cdfHouseClasses'] = [ 0.6, 0.9, 5.0 ]
     m['shareClasses'] = [0.2, 0.23, 0.25, 0.22, 0.1]
     m['classAdjustmentBeta'] = 3.0
+    
+    ##  Debugging parameter
+    m['commentOutParentsCare'] = False
+    m['commentOutHouseholdCare'] = True
+    m['externalCare'] = True
 
     m['ukMap'] = [0.0, 0.1, 0.2, 0.1, 0.0, 0.0, 0.0, 0.0,
                   0.1, 0.1, 0.2, 0.2, 0.3, 0.0, 0.0, 0.0,
@@ -195,12 +200,12 @@ def init_params():
     p['workingAge'] = [16, 18, 20, 22, 24]
     p['pensionWage'] = [5.0, 7.0, 10.0, 13.0, 18.0] # [0.64, 0.89, 1.27, 1.66, 2.29] #  
     # Salry parameters
-    p['incomeInitialLevels'] = [5.0, 7.0, 9.0, 11.0, 14.0] #[0.64, 0.89, 1.15, 1.40, 1.78] #  
-    p['incomeFinalLevels'] = [10.0, 15.0, 22.0, 33.0, 50.0] #[1.27, 1.91, 2.80, 4.21, 6.37] #  
-    p['incomeGrowthRate'] = [0.4/12.0, 0.35/12.0, 0.35/12.0, 0.3/12.0, 0.25/12.0]
-    p['wageVar'] = 0.1
+    p['incomeInitialLevels'] = [6.0, 8.0, 10.0, 12.0, 15.0] #[0.64, 0.89, 1.15, 1.40, 1.78] #  
+    p['incomeFinalLevels'] = [12.0, 16.0, 25.0, 40.0, 60.0] # [12.0, 18.0, 30.0, 45.0, 90.0] #[12.0, 16.0, 25.0, 40.0, 60.0] #  
+    p['incomeGrowthRate'] = [0.4/12.0, 0.35/12.0, 0.3/12.0, 0.25/12.0, 0.2/12.0]
+    p['wageVar'] = 0.2 # 0.1
     p['workDiscountingTime'] = 1.0
-    p['weeklyHours'] = [40.0, 20.0, 0.0, 0.0, 0.0] 
+    p['weeklyHours'] = [40.0, 20.0, 10.0, 0.0, 0.0] 
     p['maternityLeaveDuration'] = 9
     
     # Care transition params
@@ -247,6 +252,9 @@ def init_params():
     
     # Public Social Care Provision Parameters
     p['taxBreakRate'] = 0.0
+    p['disposableIncomes'] = [13115.0, 21737.0, 29695.0,	39764.0, 75331.0]
+    p['grossIncomes'] = [7685.0, 16950.0, 29938.0, 46129.0, 104992.0]
+    p['deltaIncomes'] = [(a-b) for a, b in zip(p['disposableIncomes'], p['grossIncomes'])]
     
     # 4th policy parameter
     p['socialCareTaxFreeRate'] = 0.0
@@ -274,11 +282,12 @@ def init_params():
     
     # Social Transition params
     p['educationCosts'] = [0.0, 100.0, 150.0, 200.0] #[0.0, 12.74, 19.12, 25.49] # 
-    p['eduWageSensitivity'] = 0.4 # 0.2
+    p['eduWageSensitivity'] = 0.1 # 0.2
+    p['incomeTransitionBeta'] = 0.5 # 0.01
     p['eduRankSensitivity'] = 4.0 # 3.0
-    p['costantIncomeParam'] = 20.0 # 20.0
+    p['costantIncomeParam'] = 50.0 # 20.0
     p['costantEduParam'] = 4.0 #  5.0
-    p['careEducationParam'] = 0.5 # 0.4
+    p['careEducationParam'] = 0.0 # 0.1 # 0.5
     # Alternative Social Transition function
     p['incomeBeta'] = 0.01
     p['careBeta'] = 0.01
@@ -306,12 +315,25 @@ def init_params():
     p['dailyTeenagerSupply'] = [2, 4]
     p['dailyNewMotherSupply'] = [4, 4]
     # Max weekly supply
+    
+    # p['supplyReduction'] = 1.0
+    # Debugging parameter
+    p['supplyReduction'] = 0.5
+    p['parentsMaxSupply'] = 90
     p['weeklyRetiredSupply'] = [60, 30, 16, 8] # [56.0, 28.0, 16.0, 8.0]
     p['weeklyUnemployedSupply'] = [48, 24, 12, 6]
     p['weeklyEmployedSupply'] = [32, 16, 8, 4] # [16.0, 12.0, 8.0, 4.0]
     p['weeklyStudentSupply'] = [24, 12, 6, 2] # [16.0, 8.0, 4.0, 0.0]
     p['weeklyTeenagerSupply'] = [10, 0, 0, 0]
     p['weeklyNewMotherSupply'] = [28, 0, 0, 0]
+    
+    p['parentsMaxSupply'] = int(float(p['parentsMaxSupply'])*p['supplyReduction'])
+    p['weeklyRetiredSupply'] = [int(float(x)*p['supplyReduction']) for x in p['weeklyRetiredSupply']] # [56.0, 28.0, 16.0, 8.0]
+    p['weeklyUnemployedSupply'] = [int(float(x)*p['supplyReduction']) for x in p['weeklyUnemployedSupply']]
+    p['weeklyEmployedSupply'] = [int(float(x)*p['supplyReduction']) for x in p['weeklyEmployedSupply']]
+    p['weeklyStudentSupply'] = [int(float(x)*p['supplyReduction']) for x in p['weeklyStudentSupply']]
+    p['weeklyTeenagerSupply'] = [int(float(x)*p['supplyReduction']) for x in p['weeklyTeenagerSupply']]
+    p['weeklyNewMotherSupply'] = [int(float(x)*p['supplyReduction']) for x in p['weeklyNewMotherSupply']]
     
     
     # Marriages params
@@ -497,7 +519,7 @@ def init_params():
 
     p['basicFemaleMarriageProb'] = 0.25
     p['femaleMarriageModifierByDecade'] = [ 0.0, 0.5, 1.0, 1.0, 1.0, 0.6, 0.5, 0.4, 0.1, 0.01, 0.01, 0.0, 0.0, 0.0, 0.0, 0.0 ]
-    p['basicMaleMarriageProb'] =  0.8 
+    p['basicMaleMarriageProb'] =  0.7
     p['maleMarriageModifierByDecade'] = [ 0.0, 0.16, 0.5, 1.0, 0.8, 0.7, 0.66, 0.5, 0.4, 0.2, 0.1, 0.05, 0.01, 0.0, 0.0, 0.0 ]
     p['basicDivorceRate'] = 0.06 # 0.1
     p['variableDivorce'] = 0.06 # 0.1

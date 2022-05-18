@@ -28,6 +28,7 @@ class Person:
         self.unemploymentIndex = 0
         self.unemploymentDuration = 0
         self.jobShift = None
+        self.newEntrant = False
         self.children = []
         self.childrenID = [] # For pickle
         self.yearMarried = []
@@ -38,6 +39,7 @@ class Person:
         self.birthdate = birthYear
         self.wage = wage
         self.income = inc
+        self.maternityIncome = 0
         self.previousIncome = inc
         self.disposableIncome = inc
         self.pension = 0
@@ -90,6 +92,7 @@ class Person:
         self.weeklyNeeds = []
         self.unmetWeeklyNeeds = []
         self.weeklyTime = []
+        self.parentSupply = 0
         self.jobSchedule = [[0]*24, [0]*24, [0]*24, [0]*24, [0]*24, [0]*24, [0]*24]
         self.afterCareJS = [[0]*24, [0]*24, [0]*24, [0]*24, [0]*24, [0]*24, [0]*24]
         self.initialJobSchedule = []
@@ -100,8 +103,10 @@ class Person:
         self.maxWeeklySupplies = []
         self.residualWeeklySupplies = []
         self.yearlyIncome = 0
+        self.yearlyIncomes = []
         self.yearlyBenefits = 0
         self.yearlyDisposableIncome = 0
+        self.yearlyDisposableIncomes = []
         self.incomeQuintile = []
         self.disposableIncomeQuintile = []
         self.classRank = cr
